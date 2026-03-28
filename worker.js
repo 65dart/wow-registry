@@ -200,6 +200,25 @@ export default {
       return json({ armies }, 200, origin, env);
     }
 
+    // ── GET /api/armies/all — all users' armies for community view ──
+    if (path === '/api/armies/all' && method === 'GET') {
+      const rows = await env.DB.prepare(
+        `SELECT a.id, a.data, a.created_at, u.username
+         FROM armies a
+         JOIN users u ON a.user_id = u.id
+         ORDER BY a.created_at DESC`
+      ).all();
+
+      const armies = (rows.results || []).map(r => ({
+        ...JSON.parse(r.data),
+        _dbId: r.id,
+        _createdAt: r.created_at,
+        _owner: r.username,
+      }));
+
+      return json({ armies }, 200, origin, env);
+    }
+
     // ── POST /api/armies — save a new army ──
     if (path === '/api/armies' && method === 'POST') {
       const army = await request.json().catch(() => null);

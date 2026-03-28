@@ -389,6 +389,11 @@ select option{background:#1a1208;}
 <div class="page on" id="page-chronicles">
   <div class="fbar">
     <div class="fg">
+      <span class="flbl">View:</span>
+      <select id="ff-view" style="font-family:'Cinzel',serif;font-size:.72rem;">
+        <option value="all">⚔ Community</option>
+        <option value="mine">✦ My Armies</option>
+      </select>
       <span class="flbl">Faction:</span>
       <select id="ff-fac"><option value="">All Factions</option></select>
       <span class="flbl">Result:</span>
@@ -944,7 +949,7 @@ let armies=[], nextId=1, selR='', liked=new Set(), charts={};
 
 // ── API CONFIG ──
 // Replace this with your deployed Worker URL after running: wrangler deploy
-const API = 'https://wow-registry-api.battlemarch.workers.dev';
+const API = 'https://wow-registry-api.<YOUR_SUBDOMAIN>.workers.dev';
 
 // ── SESSION STATE ──
 let authToken  = localStorage.getItem('wow_token')  || null;
@@ -1120,27 +1125,38 @@ function apiHeaders() {
   return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` };
 }
 
-// ── load() — fetch armies from API ──
+// ── load() — fetch both community and personal armies ──
+let myArmies = []; // just this user's armies (for submit, delete, rosters)
+
 async function load() {
   if (!authToken) return;
 
   // Local dev bypass — use seed data instead of API
   if (authToken === 'local-dev-token') {
-    armies = SEED.map(a => ({...a}));
-    nextId = 9;
+    armies   = SEED.map(a => ({...a}));
+    myArmies = SEED.map(a => ({...a}));
+    nextId   = 9;
     renderCards(); renderLB(); renderCharts(); renderRosters(); updateStats();
     return;
   }
 
   try {
-    const res = await fetch(`${API}/api/armies`, { headers: apiHeaders() });
-    if (res.status === 401) { doLogout(); return; }
-    const data = await res.json();
-    armies = data.armies || [];
-    nextId = armies.length ? Math.max(...armies.map(a => a.id || 0)) + 1 : 1;
+    // Fetch community feed (all users) for Chronicles/LB/Stats
+    const [allRes, myRes] = await Promise.all([
+      fetch(`${API}/api/armies/all`, { headers: apiHeaders() }),
+      fetch(`${API}/api/armies`,     { headers: apiHeaders() }),
+    ]);
+    if (allRes.status === 401) { doLogout(); return; }
+
+    const allData = await allRes.json();
+    const myData  = await myRes.json();
+
+    armies   = allData.armies || [];
+    myArmies = myData.armies  || [];
+    nextId   = myArmies.length ? Math.max(...myArmies.map(a => a.id || 0)) + 1 : 1;
   } catch(e) {
     showToast('⚠ Could not load armies from server.', true);
-    armies = [];
+    armies = []; myArmies = [];
   }
   renderCards();
   renderLB();
@@ -1271,7 +1287,9 @@ function updateStats(){
 
 // Faction filter
 function popFacFilter(){
-  const all=[...new Set(armies.map(a=>a.faction))].sort();
+  const view=document.getElementById('ff-view')?.value||'all';
+  const source = view === 'mine' ? myArmies : armies;
+  const all=[...new Set(source.map(a=>a.faction))].sort();
   const sel=document.getElementById('ff-fac');
   const cur=sel.value;
   sel.innerHTML='<option value="">All Factions</option>'+all.map(f=>`<option${f===cur?' selected':''}>${f}</option>`).join('');
@@ -1279,11 +1297,14 @@ function popFacFilter(){
 
 // Chronicles
 function getList(){
+  const view=document.getElementById('ff-view')?.value||'all';
   const fac=document.getElementById('ff-fac').value;
   const res=document.getElementById('ff-res').value;
   const srch=document.getElementById('ff-srch').value.toLowerCase();
   const srt=document.getElementById('ff-sort').value;
-  let list=armies.filter(a=>{
+  // Use myArmies when "mine" selected, full community list otherwise
+  const source = view === 'mine' ? myArmies : armies;
+  let list=source.filter(a=>{
     if(fac&&a.faction!==fac) return false;
     if(res&&a.result!==res) return false;
     if(srch&&!`${a.name} ${a.player} ${a.faction} ${a.notes||''}`.toLowerCase().includes(srch)) return false;
@@ -1345,22 +1366,25 @@ document.getElementById('cards').addEventListener('click',function(e){
   if(lb){
     const id=+lb.dataset.id;
     const a=armies.find(x=>x.id===id); if(!a) return;
+    const myA=myArmies.find(x=>x.id===id);
     if(liked.has(id)){ liked.delete(id); a.likes=Math.max(0,a.likes-1); lb.classList.remove('liked'); }
     else{ liked.add(id); a.likes++; lb.classList.add('liked'); }
+    if(myA) myA.likes=a.likes;
     lb.querySelector('span').textContent=a.likes;
     saveArmy(a);
   }
   if(db){
     const id=+db.dataset.del;
     if(!confirm('Remove this army from the chronicle?')) return;
-    const army=armies.find(a=>a.id===id);
+    const army=myArmies.find(a=>a.id===id);
     armies=armies.filter(a=>a.id!==id);
+    myArmies=myArmies.filter(a=>a.id!==id);
     if(army) deleteArmy(army);
     renderCards(); showToast('Record removed from the chronicle.');
   }
 });
 
-['ff-fac','ff-res','ff-srch','ff-sort'].forEach(id=>{
+['ff-view','ff-fac','ff-res','ff-srch','ff-sort'].forEach(id=>{
   const el=document.getElementById(id);
   el.addEventListener('input',renderCards);
   el.addEventListener('change',renderCards);
@@ -1395,6 +1419,7 @@ document.getElementById('sub-btn').addEventListener('click',function(){
     date:new Date().toISOString().split('T')[0],likes:0
   };
   armies.unshift(army);
+  myArmies.unshift(army);
   saveArmy(army);
   selR=''; document.querySelectorAll('.resb').forEach(b=>b.className='resb');
   ['s-nm','s-pt','s-ev','s-nt'].forEach(i=>document.getElementById(i).value='');
@@ -1415,8 +1440,8 @@ document.getElementById('rst-btn').addEventListener('click',async function(){
   if(!confirm('This will permanently delete ALL your records from the server. Are you sure?')) return;
   // Delete all from server
   showToast('Deleting records…');
-  await Promise.all(armies.map(a => deleteArmy(a)));
-  armies=[]; liked.clear(); nextId=1;
+  await Promise.all(myArmies.map(a => deleteArmy(a)));
+  armies=[]; myArmies=[]; liked.clear(); nextId=1;
   renderCards(); showToast('All records deleted.');
 });
 
@@ -1997,6 +2022,7 @@ function getRosterList(){
   const fac=document.getElementById('rf-fac').value;
   const srch=document.getElementById('rf-srch').value.toLowerCase();
   const srt=document.getElementById('rf-sort').value;
+  // Rosters shows all community armies
   let list=armies.filter(a=>{
     if((!a.units||!a.units.length) && (!a.oppUnits||!a.oppUnits.length)) return false;
     if(fac&&a.faction!==fac) return false;
