@@ -1176,24 +1176,25 @@ async function saveArmy(army) {
   if (!authToken || authToken === 'local-dev-token') return;
   try {
     if (army._dbId) {
-      // Update existing
-      await fetch(`${API}/api/armies/${army._dbId}`, {
+      const res = await fetch(`${API}/api/armies/${army._dbId}`, {
         method: 'PUT',
         headers: apiHeaders(),
         body: JSON.stringify(army)
       });
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
     } else {
-      // Create new
-      const res  = await fetch(`${API}/api/armies`, {
+      const res = await fetch(`${API}/api/armies`, {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify(army)
       });
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
       const data = await res.json();
       army._dbId = data.dbId;
     }
   } catch(e) {
     showToast('⚠ Could not save to server.', true);
+    throw e; // re-throw so submit handler knows it failed
   }
 }
 
@@ -1402,7 +1403,7 @@ document.querySelectorAll('.resb').forEach(btn=>{
 });
 
 // Submit
-document.getElementById('sub-btn').addEventListener('click',function(){
+document.getElementById('sub-btn').addEventListener('click', async function(){
   const pl=authUser||document.getElementById('s-pl').value.trim();
   const fac=document.getElementById('s-fac').value;
   const nm=document.getElementById('s-nm').value.trim();
@@ -1418,17 +1419,30 @@ document.getElementById('sub-btn').addEventListener('click',function(){
     oppUnits: oppImportedUnits.length ? oppImportedUnits.slice() : getOppUnits(),
     date:new Date().toISOString().split('T')[0],likes:0
   };
-  armies.unshift(army);
-  myArmies.unshift(army);
-  saveArmy(army);
-  selR=''; document.querySelectorAll('.resb').forEach(b=>b.className='resb');
-  ['s-nm','s-pt','s-ev','s-nt'].forEach(i=>document.getElementById(i).value='');
-  document.getElementById('s-fac').value=''; document.getElementById('s-of').value='';
-  clearUnits();
-  clearOppImport();
-  clearOppManual();
-  renderCards(); showToast('✦ Army recorded in the chronicle!');
-  document.querySelector('[data-page="chronicles"]').click();
+
+  // Disable button while saving
+  this.disabled = true;
+  this.textContent = '⏳ Saving…';
+
+  try {
+    await saveArmy(army);
+    armies.unshift(army);
+    myArmies.unshift(army);
+    selR=''; document.querySelectorAll('.resb').forEach(b=>b.className='resb');
+    ['s-nm','s-pt','s-ev','s-nt'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('s-fac').value=''; document.getElementById('s-of').value='';
+    clearUnits();
+    clearOppImport();
+    clearOppManual();
+    renderCards(); showToast('✦ Army recorded in the chronicle!');
+    document.querySelector('[data-page="chronicles"]').click();
+  } catch(e) {
+    showToast('⚠ Failed to save army. Please try again.', true);
+    nextId--; // roll back the id increment
+  } finally {
+    this.disabled = false;
+    this.textContent = '⚔ Record in the Chronicle';
+  }
 });
 
 document.getElementById('exp-btn').addEventListener('click',function(){
