@@ -1,0 +1,2833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Old World — Army List Registry</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --gold:#c9a84c; --gold-light:#e8cc80; --gold-dark:#8a6a1e;
+  --parchment:#f5ead8; --parchment-dark:#e8d4b0;
+  --aged:#c4a96b; --text-muted:#8a6a2a;
+  --bg-page:#12100c; --bg-card:#1e1810; --bg-card-h:#261e14; --bg-input:#150f0a;
+  --bf:rgba(201,168,76,0.18); --bm:rgba(201,168,76,0.35);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg-page);color:var(--parchment);min-height:100vh;
+  background-image:radial-gradient(ellipse at 20% 0%,rgba(90,50,10,.3) 0%,transparent 55%),radial-gradient(ellipse at 80% 100%,rgba(60,20,10,.25) 0%,transparent 55%);}
+
+/* HEADER */
+header{text-align:center;padding:2.5rem 1.5rem 1.5rem;border-bottom:1px solid var(--bf);}
+.horn{color:var(--gold);font-size:1.1rem;letter-spacing:.5rem;opacity:.6;display:block;margin-bottom:.5rem;}
+header h1{font-family:'Cinzel',serif;font-size:clamp(1.8rem,5vw,3.2rem);font-weight:700;color:var(--gold-light);text-shadow:0 2px 20px rgba(201,168,76,.35);letter-spacing:.08em;line-height:1.1;margin-bottom:.2rem;}
+header h2{font-family:'Cinzel',serif;font-size:clamp(.7rem,2vw,1rem);font-weight:400;color:var(--aged);letter-spacing:.25em;text-transform:uppercase;margin-bottom:.75rem;}
+.tagline{font-style:italic;color:var(--text-muted);font-size:.95rem;}
+.div{display:flex;align-items:center;gap:1rem;margin:.75rem auto;max-width:400px;}
+.div::before{content:'';flex:1;height:1px;background:linear-gradient(to right,transparent,var(--gold-dark));}
+.div::after{content:'';flex:1;height:1px;background:linear-gradient(to left,transparent,var(--gold-dark));}
+.divx{color:var(--gold);font-size:.9rem;}
+
+/* NAV */
+.nav{display:flex;justify-content:center;gap:0;border-bottom:1px solid var(--bf);background:rgba(16,12,8,.8);position:sticky;top:0;z-index:200;backdrop-filter:blur(10px);}
+.nt{font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;padding:.9rem 1.6rem;cursor:pointer;color:var(--text-muted);border:none;background:none;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;}
+.nt:hover{color:var(--aged);}
+.nt.on{color:var(--gold-light);border-bottom-color:var(--gold);}
+
+/* STATS BAR */
+.sbar{display:flex;flex-wrap:wrap;justify-content:center;border-bottom:1px solid var(--bf);background:rgba(18,14,10,.8);}
+.sp{display:flex;flex-direction:column;align-items:center;gap:.05rem;padding:.55rem 1.3rem;border-right:1px solid var(--bf);}
+.sp:last-child{border-right:none;}
+.sv{font-family:'Cinzel',serif;font-size:1.15rem;font-weight:600;color:var(--gold-light);}
+.sl{font-size:.6rem;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;}
+
+/* PAGES */
+.page{display:none;max-width:1200px;margin:0 auto;padding:2rem 1.5rem;}
+.page.on{display:block;}
+
+/* INPUTS */
+select,input[type=text],input[type=number]{background:var(--bg-input);border:1px solid var(--bm);color:var(--parchment);font-family:'Crimson Pro',serif;font-size:.9rem;padding:.42rem .7rem;border-radius:3px;outline:none;transition:border-color .2s;}
+select:hover,input:hover{border-color:var(--gold);}
+select:focus,input:focus{border-color:var(--gold-light);}
+select option{background:#1a1208;}
+
+/* FILTER BAR */
+.fbar{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;justify-content:space-between;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--bf);}
+.fg{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;}
+.flbl{font-family:'Cinzel',serif;font-size:.63rem;letter-spacing:.1em;color:var(--text-muted);text-transform:uppercase;}
+
+/* CARDS */
+.cgrid{display:flex;flex-direction:column;gap:.85rem;}
+.ac{background:var(--bg-card);border:1px solid var(--bf);border-radius:4px;padding:1.1rem 1.4rem;transition:border-color .2s,background .2s;position:relative;overflow:hidden;}
+.ac::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--fcc,var(--gold-dark));}
+.ac:hover{border-color:var(--bm);background:var(--bg-card-h);}
+.ctop{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.6rem;}
+.cft{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;margin-bottom:.25rem;}
+.cnm{font-family:'Cinzel',serif;font-size:1.1rem;font-weight:600;color:var(--parchment);}
+.cpl{font-size:.86rem;color:var(--text-muted);font-style:italic;margin-top:.1rem;}
+.cpb{text-align:right;flex-shrink:0;}
+.cpv{font-family:'Cinzel',serif;font-size:1.45rem;font-weight:600;color:var(--gold-light);display:block;line-height:1;}
+.cpl2{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);}
+.cop{font-size:.78rem;color:var(--text-muted);margin-top:.2rem;}
+.crr{display:flex;align-items:center;gap:.65rem;flex-wrap:wrap;margin-top:.5rem;}
+.rb{font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:.07em;padding:.22rem .7rem;border-radius:2px;font-weight:600;}
+.rw{background:rgba(42,74,26,.7);color:#8fcc5a;border:1px solid rgba(143,204,90,.35);}
+.rl{background:rgba(92,26,26,.7);color:#d46060;border:1px solid rgba(212,96,96,.35);}
+.rd{background:rgba(60,48,20,.7);color:var(--aged);border:1px solid rgba(196,169,107,.35);}
+.cev{font-size:.8rem;color:var(--text-muted);font-style:italic;}
+.cnts{margin-top:.65rem;padding-top:.65rem;border-top:1px solid rgba(201,168,76,.1);font-size:.86rem;color:var(--parchment-dark);font-style:italic;line-height:1.55;}
+.cfoot{display:flex;justify-content:space-between;align-items:center;margin-top:.65rem;padding-top:.55rem;border-top:1px solid rgba(201,168,76,.1);}
+.cdt{font-size:.72rem;color:var(--text-muted);}
+.cact{display:flex;gap:.5rem;align-items:center;}
+.lbtn{background:none;border:1px solid rgba(201,168,76,.22);color:var(--text-muted);font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.05em;padding:.22rem .6rem;border-radius:2px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:.35rem;}
+.lbtn:hover{border-color:var(--gold);color:var(--gold);}
+.lbtn.liked{border-color:#a03030;color:#e06060;}
+.dbtn{background:none;border:1px solid rgba(180,60,60,.25);color:rgba(200,80,80,.5);font-size:.65rem;padding:.22rem .55rem;border-radius:2px;cursor:pointer;transition:all .2s;}
+.dbtn:hover{border-color:rgba(200,80,80,.6);color:#d46060;}
+
+/* SUBMIT */
+.slayout{display:grid;grid-template-columns:1fr 360px;gap:2rem;align-items:start;}
+@media(max-width:860px){.slayout{grid-template-columns:1fr;}}
+.panel{background:var(--bg-card);border:1px solid var(--bm);border-radius:4px;padding:1.5rem;}
+.ptitle{font-family:'Cinzel',serif;font-size:.88rem;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;margin-bottom:1.2rem;padding-bottom:.7rem;border-bottom:1px solid var(--bf);}
+.ff{margin-bottom:.9rem;}
+.ff label{display:block;font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--aged);margin-bottom:.35rem;}
+.ff input,.ff select,.ff textarea{width:100%;resize:vertical;}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;}
+.rbtns{display:flex;gap:.45rem;}
+.resb{flex:1;padding:.48rem;border:1px solid var(--bf);background:none;color:var(--text-muted);font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:.07em;border-radius:3px;cursor:pointer;transition:all .2s;}
+.resb:hover{border-color:var(--gold);color:var(--parchment);}
+.resb.aw{background:rgba(42,74,26,.7);color:#8fcc5a;border-color:rgba(143,204,90,.5);}
+.resb.ad{background:rgba(60,48,20,.7);color:var(--aged);border-color:rgba(196,169,107,.5);}
+.resb.al{background:rgba(92,26,26,.7);color:#d46060;border-color:rgba(212,96,96,.5);}
+.subbtn{width:100%;background:linear-gradient(to bottom,rgba(201,168,76,.18),rgba(138,106,30,.22));border:1px solid var(--gold-dark);color:var(--gold-light);font-family:'Cinzel',serif;font-size:.82rem;letter-spacing:.15em;text-transform:uppercase;padding:.72rem;border-radius:3px;cursor:pointer;transition:all .2s;margin-top:.4rem;}
+.subbtn:hover{background:linear-gradient(to bottom,rgba(201,168,76,.32),rgba(138,106,30,.36));border-color:var(--gold);}
+
+/* CHARTS */
+.cgrd{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+@media(max-width:760px){.cgrd{grid-template-columns:1fr;}}
+.chp{background:var(--bg-card);border:1px solid var(--bf);border-radius:4px;padding:1.4rem;}
+.cht{font-family:'Cinzel',serif;font-size:.8rem;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;margin-bottom:1.1rem;text-align:center;}
+.chp.wide{grid-column:1/-1;}
+
+/* LEADERBOARD */
+.lblayout{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+@media(max-width:760px){.lblayout{grid-template-columns:1fr;}}
+.lbt{width:100%;border-collapse:collapse;font-size:.88rem;}
+.lbt thead tr{border-bottom:1px solid var(--bm);}
+.lbt th{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);padding:.5rem .7rem;text-align:left;font-weight:400;}
+.lbt td{padding:.5rem .7rem;border-bottom:1px solid rgba(201,168,76,.07);}
+.lbt tr:hover td{background:rgba(201,168,76,.04);}
+.rnk{font-family:'Cinzel',serif;font-size:.78rem;color:var(--text-muted);}
+.rnk.g{color:#e8cc80;} .rnk.s{color:#c0c0c0;} .rnk.b{color:#cd7f32;}
+.wrbar{display:flex;align-items:center;gap:.5rem;}
+.wrbg{flex:1;height:5px;background:rgba(201,168,76,.12);border-radius:3px;}
+.wrfill{height:5px;background:linear-gradient(to right,var(--gold-dark),var(--gold));border-radius:3px;}
+
+/* ── TYPE BADGES (shared by builder + display) ── */
+.type-badge{display:inline-block;font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.08em;padding:.12rem .45rem;border-radius:2px;text-transform:uppercase;}
+.tb-lord{background:rgba(201,168,76,.15);color:var(--gold);border:1px solid rgba(201,168,76,.3);}
+.tb-core{background:rgba(90,160,60,.1);color:#7ab840;border:1px solid rgba(90,160,60,.2);}
+.tb-special{background:rgba(160,106,212,.12);color:#a06ad4;border:1px solid rgba(160,106,212,.22);}
+.tb-rare{background:rgba(212,96,96,.1);color:#d46060;border:1px solid rgba(212,96,96,.2);}
+
+/* ── UNIT CARD BUILDER ── */
+.comp-wrap{margin-top:.8rem;}
+.comp-budget{display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;padding:.5rem .75rem;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.15);border-radius:3px;}
+.comp-budget-label{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);}
+.comp-budget-nums{display:flex;gap:1rem;align-items:baseline;}
+.comp-budget-used{font-family:'Cinzel',serif;font-size:1rem;color:var(--gold-light);}
+.comp-budget-of{font-size:.78rem;color:var(--text-muted);}
+.comp-budget-over{color:#d46060!important;}
+.comp-budget-bar-wrap{height:4px;background:rgba(201,168,76,.12);border-radius:2px;margin-top:.35rem;overflow:hidden;}
+.comp-budget-bar{height:4px;background:linear-gradient(to right,var(--gold-dark),var(--gold));border-radius:2px;transition:width .3s,background .3s;}
+.comp-budget-bar.over{background:linear-gradient(to right,#7a1a1a,#d46060);}
+
+.unit-cards{display:flex;flex-direction:column;gap:.6rem;margin-bottom:.6rem;}
+
+.uc{background:var(--bg-input);border:1px solid rgba(201,168,76,.2);border-radius:4px;overflow:hidden;transition:border-color .2s;}
+.uc:hover{border-color:rgba(201,168,76,.35);}
+.uc-head{display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;cursor:pointer;user-select:none;}
+.uc-drag{color:var(--text-muted);font-size:.9rem;cursor:grab;padding:0 .2rem;}
+.uc-type-sel{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.06em;padding:.2rem .4rem;border-radius:2px;border:1px solid rgba(201,168,76,.25);background:transparent;color:var(--parchment);cursor:pointer;text-transform:uppercase;}
+.uc-name-inp{flex:1;background:transparent;border:none;border-bottom:1px solid rgba(201,168,76,.2);color:var(--parchment);font-family:'Cinzel',serif;font-size:.82rem;padding:.15rem .3rem;outline:none;min-width:0;}
+.uc-name-inp:focus{border-bottom-color:var(--gold);}
+.uc-name-sel{flex:1;background:transparent;border:none;border-bottom:1px solid rgba(201,168,76,.2);color:var(--parchment);font-family:'Cinzel',serif;font-size:.82rem;padding:.15rem .3rem;outline:none;min-width:0;cursor:pointer;}
+.uc-name-sel:focus{border-bottom-color:var(--gold);}
+.uc-name-sel option{background:#1a1208;font-family:'Crimson Pro',serif;}
+.uc-name-custom{background:transparent;border:none;border-bottom:1px solid rgba(201,168,76,.2);color:var(--parchment);font-family:'Cinzel',serif;font-size:.82rem;padding:.15rem .3rem;outline:none;width:100%;}
+.uc-name-custom:focus{border-bottom-color:var(--gold);}
+
+.uc-pts-display{font-family:'Cinzel',serif;font-size:.92rem;color:var(--gold-light);min-width:52px;text-align:right;flex-shrink:0;}
+.uc-toggle{background:none;border:none;color:var(--text-muted);font-size:.7rem;cursor:pointer;padding:.1rem .3rem;line-height:1;transition:transform .2s;}
+.uc-toggle.open{transform:rotate(180deg);}
+.uc-del{background:none;border:1px solid rgba(180,60,60,.3);color:rgba(200,80,80,.5);width:22px;height:22px;border-radius:2px;cursor:pointer;font-size:.65rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;}
+.uc-del:hover{border-color:#d46060;color:#d46060;}
+
+.uc-body{padding:.6rem .75rem .75rem;border-top:1px solid rgba(201,168,76,.1);display:none;}
+.uc-body.open{display:block;}
+
+.uc-row{display:grid;gap:.5rem;margin-bottom:.55rem;}
+.uc-row-2{grid-template-columns:1fr 1fr;}
+.uc-row-3{grid-template-columns:1fr 1fr 1fr;}
+.uc-row-4{grid-template-columns:repeat(4,1fr);}
+.uc-field label{display:block;font-family:'Cinzel',serif;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.25rem;}
+.uc-field input,.uc-field select,.uc-field textarea{width:100%;font-size:.84rem;padding:.35rem .5rem;}
+.uc-field textarea{resize:vertical;min-height:52px;}
+
+.uc-calc{display:flex;align-items:center;gap:.4rem;margin-top:.1rem;font-size:.76rem;color:var(--text-muted);font-style:italic;}
+.uc-calc span{color:var(--aged);}
+
+.upgrades-area{margin-top:.55rem;}
+.upgrades-lbl{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.4rem;display:flex;justify-content:space-between;align-items:center;}
+.add-upgrade-btn{background:none;border:none;color:var(--text-muted);font-size:.7rem;cursor:pointer;padding:.1rem .3rem;transition:color .2s;font-family:'Cinzel',serif;letter-spacing:.06em;}
+.add-upgrade-btn:hover{color:var(--gold);}
+.upgrade-row{display:grid;grid-template-columns:1fr 70px 22px;gap:.4rem;align-items:center;margin-bottom:.35rem;}
+.upgrade-row input{font-size:.82rem;padding:.28rem .45rem;}
+.upgrade-check{display:flex;align-items:center;gap:.5rem;margin-bottom:.28rem;}
+.upgrade-check input[type=checkbox]{width:14px;height:14px;accent-color:var(--gold);cursor:pointer;flex-shrink:0;}
+.upgrade-check label{font-size:.84rem;color:var(--parchment-dark);cursor:pointer;flex:1;}
+.upgrade-check .upg-pts{font-family:'Cinzel',serif;font-size:.75rem;color:var(--gold);min-width:36px;text-align:right;}
+.del-upg{background:none;border:none;color:rgba(200,80,80,.4);font-size:.65rem;cursor:pointer;padding:0 .2rem;transition:color .2s;}
+.del-upg:hover{color:#d46060;}
+
+.add-unit-btn{width:100%;padding:.5rem;background:none;border:1px dashed rgba(201,168,76,.22);color:var(--text-muted);font-family:'Cinzel',serif;font-size:.66rem;letter-spacing:.12em;border-radius:3px;cursor:pointer;transition:all .2s;}
+.add-unit-btn:hover{border-color:var(--gold);color:var(--aged);}
+.type-section-btn{flex:1;padding:.4rem .3rem;background:none;border:1px solid rgba(201,168,76,.18);color:var(--text-muted);font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.08em;border-radius:3px;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.type-section-btn:hover{border-color:var(--gold);color:var(--aged);}
+
+/* ── COMP DISPLAY (roster cards + chronicle inline) ── */
+.comp-section{margin-top:.8rem;padding-top:.8rem;border-top:1px solid rgba(201,168,76,.12);}
+.comp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;}
+.comp-title{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--aged);}
+.comp-total{font-family:'Cinzel',serif;font-size:.72rem;color:var(--gold);letter-spacing:.06em;}
+.comp-table{width:100%;border-collapse:collapse;font-size:.83rem;}
+.comp-table th{font-family:'Cinzel',serif;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);padding:.3rem .5rem;text-align:left;font-weight:400;border-bottom:1px solid rgba(201,168,76,.1);}
+.comp-table td{padding:.3rem .5rem;border-bottom:1px solid rgba(201,168,76,.05);color:var(--parchment-dark);vertical-align:top;}
+.comp-table tr:last-child td{border-bottom:none;}
+.comp-table .td-pts{text-align:right;color:var(--gold);font-family:'Cinzel',serif;font-size:.78rem;white-space:nowrap;}
+.comp-table .td-models{text-align:center;color:var(--text-muted);font-size:.78rem;}
+.comp-upgs{font-size:.76rem;color:var(--text-muted);font-style:italic;margin-top:.18rem;}
+.comp-magic{font-size:.76rem;color:#a06ad4;font-style:italic;margin-top:.12rem;}
+
+/* EMPTY / TOAST */
+.empty{text-align:center;padding:3rem 2rem;color:var(--text-muted);font-style:italic;}
+.eico{font-size:2rem;opacity:.35;margin-bottom:.75rem;}
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(140%);background:rgba(30,22,8,.97);border:1px solid var(--bm);color:var(--gold-light);font-family:'Cinzel',serif;font-size:.78rem;letter-spacing:.1em;padding:.7rem 2rem;border-radius:3px;z-index:999;transition:transform .3s ease;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.err{border-color:rgba(200,80,80,.5);color:#d46060;}
+
+/* FACTION ICONS & CUSTOM SELECTS */
+.faction-icon{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+.faction-icon svg{width:100%;height:100%;}
+.fac-sel-wrap{position:relative;}
+.fac-sel-trigger{display:flex;align-items:center;gap:.55rem;background:var(--bg-input);border:1px solid var(--bm);color:var(--parchment);font-family:'Crimson Pro',serif;font-size:.9rem;padding:.42rem .7rem;border-radius:3px;cursor:pointer;transition:border-color .2s;user-select:none;min-height:35px;}
+.fac-sel-trigger:hover{border-color:var(--gold);}
+.fac-sel-trigger.open{border-color:var(--gold-light);}
+.fac-sel-trigger .fac-sel-arrow{margin-left:auto;font-size:.65rem;color:var(--text-muted);transition:transform .2s;}
+.fac-sel-trigger.open .fac-sel-arrow{transform:rotate(180deg);}
+.fac-sel-dropdown{position:absolute;top:calc(100% + 2px);left:0;right:0;background:var(--bg-card);border:1px solid var(--bm);border-radius:3px;z-index:500;max-height:280px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.5);}
+.fac-sel-dropdown::-webkit-scrollbar{width:4px;}
+.fac-sel-dropdown::-webkit-scrollbar-track{background:transparent;}
+.fac-sel-dropdown::-webkit-scrollbar-thumb{background:var(--gold-dark);border-radius:2px;}
+.fac-sel-item{display:flex;align-items:center;gap:.55rem;padding:.45rem .7rem;cursor:pointer;transition:background .15s;font-family:'Crimson Pro',serif;font-size:.9rem;}
+.fac-sel-item:hover{background:rgba(201,168,76,.08);}
+.fac-sel-item.selected{background:rgba(201,168,76,.12);}
+.fac-sel-group{padding:.35rem .7rem .15rem;font-family:'Cinzel',serif;font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);border-top:1px solid var(--bf);margin-top:.2rem;}
+.fac-sel-group:first-child{border-top:none;margin-top:0;}
+.fac-placeholder{color:var(--text-muted);font-style:italic;}
+.fce{color:#5a9ad4!important;--fcc:#4a7abf;}  /* Empire of Man */
+.fcb{color:#6ab86a!important;--fcc:#5c9e5c;}  /* Bretonnia */
+.fcd{color:#d4933a!important;--fcc:#bf7a2a;}  /* Dwarfen Mountain Holds */
+.fch{color:#7ad4d4!important;--fcc:#5aafaf;}  /* High Elf Realms */
+.fcw{color:#4db84d!important;--fcc:#3d7a3d;}  /* Wood Elf Realms */
+.fcde{color:#9a6ad4!important;--fcc:#7a4abf;} /* Dark Elves */
+.fctk{color:#d4c04a!important;--fcc:#bfaa40;} /* Tomb Kings */
+.fcvc{color:#a06ad4!important;--fcc:#8a3dbf;} /* Vampire Counts */
+.fccw{color:#d46060!important;--fcc:#bf4040;} /* Warriors of Chaos */
+.fcbm{color:#a08040!important;--fcc:#7a5c2a;} /* Beastmen Brayherds */
+.fcog{color:#7ab840!important;--fcc:#5c8a2a;} /* Orc & Goblin Tribes */
+.fcsk{color:#c0b840!important;--fcc:#9a9a2a;} /* Skaven */
+.fclz{color:#40c0b0!important;--fcc:#2a8a7a;} /* Lizardmen */
+.fcok{color:#c09060!important;--fcc:#8a6030;} /* Ogre Kingdoms */
+.fccd{color:#d48040!important;--fcc:#bf6a2a;} /* Chaos Dwarfs */
+.fcdw{color:#d4b04a!important;--fcc:#bf8a2a;} /* Dogs of War */
+.fcgc{color:#e06060!important;--fcc:#c44a4a;} /* Grand Cathay */
+.fcdc{color:#b060d4!important;--fcc:#8a2abf;} /* Daemons of Chaos */
+.fckv{color:#60a0e0!important;--fcc:#4a8abf;} /* Kislev */
+.fcrr{color:#909090!important;--fcc:#6a6a6a;} /* Regiments of Renown */
+.fcrm{color:#b0a060!important;--fcc:#7a6a4a;} /* Realms of Men */
+
+/* ── AUTH OVERLAY ── */
+.auth-overlay{position:fixed;inset:0;background:rgba(6,4,2,.95);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.auth-overlay.hidden{display:none;}
+
+/* Faction ring */
+.auth-scene{position:relative;display:flex;align-items:center;justify-content:center;width:800px;height:800px;max-width:98vmin;max-height:98vmin;}
+.faction-ring{position:absolute;inset:0;animation:ringRotate 120s linear infinite;}
+@keyframes ringRotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.ring-icon{
+  position:absolute;
+  width:52px; height:52px;
+}
+.ring-icon-inner{
+  width:52px; height:52px;
+  border-radius:50%;
+  background:rgba(20,14,6,.88);
+  border:1px solid rgba(201,168,76,.22);
+  box-shadow:0 2px 16px rgba(0,0,0,.7);
+  display:flex;align-items:center;justify-content:center;
+  cursor:default;
+  transition:border-color .3s, box-shadow .3s;
+  /* counter-rotate so icons always face upright */
+  animation:iconCounterRotate 120s linear infinite;
+}
+@keyframes iconCounterRotate{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+.ring-icon-inner:hover{border-color:rgba(201,168,76,.7);box-shadow:0 4px 28px rgba(201,168,76,.25);}
+.ring-icon-inner svg{width:28px;height:28px;flex-shrink:0;}
+
+/* Decorative ring border */
+.auth-ring-border{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(201,168,76,.13);pointer-events:none;}
+.auth-ring-border-inner{position:absolute;inset:55px;border-radius:50%;border:1px solid rgba(201,168,76,.07);pointer-events:none;}
+
+/* Login box */
+.auth-box{position:relative;z-index:2;background:linear-gradient(160deg,#1e1810,#150f0a);border:1px solid var(--bm);border-radius:8px;padding:2.5rem 2.2rem;width:360px;max-width:90vw;box-shadow:0 0 60px rgba(0,0,0,.9),0 0 120px rgba(201,168,76,.06);}
+.auth-box::before{content:'';position:absolute;inset:-1px;border-radius:9px;background:linear-gradient(135deg,rgba(201,168,76,.2),transparent 40%,transparent 60%,rgba(201,168,76,.1));pointer-events:none;}
+.auth-title{font-family:'Cinzel',serif;font-size:1.25rem;color:var(--gold-light);text-align:center;margin-bottom:.25rem;letter-spacing:.12em;}
+.auth-sub{text-align:center;color:var(--text-muted);font-style:italic;font-size:.85rem;margin-bottom:1.4rem;}
+.auth-tabs{display:flex;border-bottom:1px solid var(--bf);margin-bottom:1.4rem;}
+.auth-tab{flex:1;background:none;border:none;border-bottom:2px solid transparent;padding:.55rem;font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);cursor:pointer;transition:all .2s;}
+.auth-tab.on{color:var(--gold-light);border-bottom-color:var(--gold);}
+.auth-field{margin-bottom:.9rem;}
+.auth-field label{display:block;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--aged);margin-bottom:.3rem;font-family:'Cinzel',serif;}
+.auth-field input{width:100%;background:var(--bg-input);border:1px solid var(--bm);color:var(--parchment);font-family:'Crimson Pro',serif;font-size:.95rem;padding:.48rem .7rem;border-radius:3px;outline:none;transition:border-color .2s;}
+.auth-field input:focus{border-color:var(--gold);}
+.auth-btn{width:100%;background:linear-gradient(135deg,#2a1e08,#3d2a0a);border:1px solid var(--gold-dark);color:var(--gold-light);font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;padding:.65rem;border-radius:3px;cursor:pointer;margin-top:.4rem;transition:all .2s;}
+.auth-btn:hover{background:linear-gradient(135deg,#3d2a0a,#5a3e10);border-color:var(--gold);}
+.auth-btn:disabled{opacity:.5;cursor:not-allowed;}
+.auth-err{background:rgba(180,40,40,.12);border:1px solid rgba(180,40,40,.3);color:#e07070;font-size:.82rem;padding:.45rem .7rem;border-radius:3px;margin-bottom:.9rem;display:none;}
+.auth-err.show{display:block;}
+/* User pill in nav */
+.user-pill{display:flex;align-items:center;gap:.5rem;margin-left:auto;padding:.5rem 1rem;font-size:.75rem;color:var(--aged);font-family:'Cinzel',serif;}
+.user-pill span{color:var(--gold-light);}
+.user-pill button{background:none;border:1px solid rgba(201,168,76,.2);color:var(--text-muted);font-size:.62rem;padding:.2rem .5rem;border-radius:2px;cursor:pointer;font-family:'Cinzel',serif;letter-spacing:.08em;transition:all .2s;}
+.user-pill button:hover{border-color:var(--gold);color:var(--aged);}
+.api-loading{opacity:.5;pointer-events:none;}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="horn">⚔ ✦ ⚔</span>
+  <h1>The Old World</h1>
+  <h2>Army List Registry</h2>
+  <div class="div"><span class="divx">✦</span></div>
+  <p class="tagline">Chronicle your battles. Record your glory. Remember the fallen.</p>
+</header>
+
+<!-- ── AUTH OVERLAY ── -->
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-scene">
+    <!-- Decorative ring lines -->
+    <div class="auth-ring-border"></div>
+    <div class="auth-ring-border-inner"></div>
+
+    <!-- Faction icons ring — populated by JS -->
+    <div class="faction-ring" id="faction-ring"></div>
+
+    <!-- Login box -->
+    <div class="auth-box">
+      <div class="auth-title">⚔ The Old World Registry</div>
+      <div class="auth-sub">Sign in to chronicle your campaigns</div>
+      <div class="auth-tabs">
+        <button class="auth-tab on" id="tab-login" onclick="switchAuthTab('login')">Login</button>
+        <button class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Sign Up</button>
+      </div>
+      <div id="auth-err" class="auth-err"></div>
+
+      <!-- Login form -->
+      <div id="form-login">
+        <div class="auth-field"><label>Email</label><input type="email" id="li-email" placeholder="commander@empire.com" autocomplete="email"></div>
+        <div class="auth-field"><label>Password</label><input type="password" id="li-pass" placeholder="••••••••" autocomplete="current-password"></div>
+        <button class="auth-btn" id="li-btn" onclick="doLogin()">Enter the Registry</button>
+      </div>
+
+      <!-- Signup form -->
+      <div id="form-signup" style="display:none">
+        <div class="auth-field"><label>Commander Name</label><input type="text" id="su-user" placeholder="e.g. Grimnar Stonebrew" autocomplete="username"></div>
+        <div class="auth-field"><label>Email</label><input type="email" id="su-email" placeholder="commander@empire.com" autocomplete="email"></div>
+        <div class="auth-field"><label>Password <span style="font-size:.7em;color:var(--text-muted)">(min 8 chars)</span></label><input type="password" id="su-pass" placeholder="••••••••" autocomplete="new-password"></div>
+        <button class="auth-btn" id="su-btn" onclick="doSignup()">Join the Registry</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nt on" data-page="chronicles">⚔ Chronicles</button>
+  <button class="nt" data-page="submit">✦ Submit Army</button>
+  <button class="nt" data-page="leaderboard">⚜ Leaderboard</button>
+  <button class="nt" data-page="charts">✦ Statistics</button>
+  <button class="nt" data-page="rosters">⚔ Rosters</button>
+  <div class="user-pill" id="user-pill" style="display:none">
+    <span id="user-name"></span>
+    <button onclick="doLogout()">Logout</button>
+  </div>
+</nav>
+
+<div class="sbar">
+  <div class="sp"><span class="sv" id="st-tot">0</span><span class="sl">Armies</span></div>
+  <div class="sp"><span class="sv" id="st-w">0</span><span class="sl">Victories</span></div>
+  <div class="sp"><span class="sv" id="st-l">0</span><span class="sl">Defeats</span></div>
+  <div class="sp"><span class="sv" id="st-d">0</span><span class="sl">Draws</span></div>
+  <div class="sp"><span class="sv" id="st-wr">0%</span><span class="sl">Win Rate</span></div>
+  <div class="sp"><span class="sv" id="st-ap">0</span><span class="sl">Avg Battle Pts</span></div>
+</div>
+
+<!-- CHRONICLES -->
+<div class="page on" id="page-chronicles">
+  <div class="fbar">
+    <div class="fg">
+      <span class="flbl">Faction:</span>
+      <select id="ff-fac"><option value="">All Factions</option></select>
+      <span class="flbl">Result:</span>
+      <select id="ff-res">
+        <option value="">All</option>
+        <option value="Win">Victory</option>
+        <option value="Loss">Defeat</option>
+        <option value="Draw">Draw</option>
+      </select>
+      <input type="text" id="ff-srch" placeholder="Search…" style="min-width:160px">
+    </div>
+    <select id="ff-sort">
+      <option value="newest">Newest First</option>
+      <option value="oldest">Oldest First</option>
+      <option value="ph">Points High→Low</option>
+      <option value="pl">Points Low→High</option>
+      <option value="likes">Most Liked</option>
+      <option value="wins">Victories First</option>
+    </select>
+  </div>
+  <div class="cgrid" id="cards"></div>
+</div>
+
+<!-- SUBMIT -->
+<div class="page" id="page-submit">
+  <div class="slayout">
+    <div>
+      <div class="panel">
+        <div class="ptitle">✦ Record a New Army</div>
+        <div class="frow">
+          <div class="ff"><label>Commander's Name</label><input type="text" id="s-pl" placeholder="Your name or alias" style="opacity:.7;cursor:default" readonly></div>
+          <div class="ff"><label>Faction *</label>
+            <select id="s-fac">
+              <option value="">Select…</option>
+              <optgroup label="── Core Factions ──" disabled></optgroup>
+              <option>Empire of Man</option><option>Kingdom of Bretonnia</option><option>Dwarfen Mountain Holds</option>
+              <option>High Elf Realms</option><option>Wood Elf Realms</option>
+              <option>Orc &amp; Goblin Tribes</option><option>Warriors of Chaos</option>
+              <option>Beastmen Brayherds</option><option>Tomb Kings of Khemri</option>
+              <optgroup label="── New Factions ──" disabled></optgroup>
+              <option>Grand Cathay</option>
+              <optgroup label="── Legacy Factions ──" disabled></optgroup>
+              <option>Dark Elves</option><option>Skaven</option><option>Vampire Counts</option>
+              <option>Daemons of Chaos</option><option>Ogre Kingdoms</option>
+              <option>Lizardmen</option><option>Chaos Dwarfs</option>
+              <optgroup label="── Other ──" disabled></optgroup>
+              <option>Dogs of War</option><option>Kislev</option>
+              <option>Regiments of Renown</option><option>Realms of Men</option>
+            </select>
+          </div>
+        </div>
+        <div class="ff"><label>Army Name *</label><input type="text" id="s-nm" placeholder="e.g. The Iron Host of Reikland"></div>
+        <div class="ff">
+          <label>Battle Points *</label>
+          <select id="s-pt">
+            <option value="">Select points…</option>
+            <option value="500">500</option>
+            <option value="750">750</option>
+            <option value="1000">1,000</option>
+            <option value="1250">1,250</option>
+            <option value="1500">1,500</option>
+            <option value="1750">1,750</option>
+            <option value="2000">2,000</option>
+            <option value="2250">2,250</option>
+            <option value="2500">2,500</option>
+            <option value="2750">2,750</option>
+            <option value="3000">3,000</option>
+          </select>
+        </div>
+        <div class="ff">
+          <label>Battle Result *</label>
+          <div class="rbtns">
+            <button type="button" class="resb" data-r="Win">Victory</button>
+            <button type="button" class="resb" data-r="Draw">Draw</button>
+            <button type="button" class="resb" data-r="Loss">Defeat</button>
+          </div>
+        </div>
+        <div class="frow">
+          <div class="ff"><label>Opponent's Faction</label>
+            <select id="s-of">
+              <option value="">Unknown</option>
+              <optgroup label="── Core Factions ──" disabled></optgroup>
+              <option>Empire of Man</option><option>Kingdom of Bretonnia</option><option>Dwarfen Mountain Holds</option>
+              <option>High Elf Realms</option><option>Wood Elf Realms</option>
+              <option>Orc &amp; Goblin Tribes</option><option>Warriors of Chaos</option>
+              <option>Beastmen Brayherds</option><option>Tomb Kings of Khemri</option>
+              <optgroup label="── New Factions ──" disabled></optgroup>
+              <option>Grand Cathay</option>
+              <optgroup label="── Legacy Factions ──" disabled></optgroup>
+              <option>Dark Elves</option><option>Skaven</option><option>Vampire Counts</option>
+              <option>Daemons of Chaos</option><option>Ogre Kingdoms</option>
+              <option>Lizardmen</option><option>Chaos Dwarfs</option>
+              <optgroup label="── Other ──" disabled></optgroup>
+              <option>Dogs of War</option><option>Kislev</option>
+              <option>Regiments of Renown</option><option>Realms of Men</option>
+            </select>
+          </div>
+          <div class="ff"><label>Event / Tournament</label><input type="text" id="s-ev" placeholder="e.g. Altdorf Grand Muster"></div>
+        </div>
+
+        <!-- ARMY COMPOSITION BUILDER -->
+        <div style="border-top:1px solid var(--bf);padding-top:.9rem;margin-top:.2rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem;">
+            <span style="font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--aged);">Army Composition</span>
+            <div style="display:flex;align-items:center;gap:.6rem;">
+              <label id="json-import-label" style="font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);border:1px solid rgba(201,168,76,.25);padding:.22rem .7rem;border-radius:3px;cursor:pointer;transition:all .2s;" title="Import a JSON file from old-world-builder.com or a previous export">
+                ↑ Import JSON
+                <input type="file" id="json-import-input" accept=".json" style="display:none">
+              </label>
+              <span style="font-size:.76rem;color:var(--text-muted);font-style:italic;">optional</span>
+            </div>
+          </div>
+
+          <!-- DROP ZONE -->
+          <div id="json-drop-zone" style="display:none;border:1px dashed rgba(201,168,76,.3);border-radius:4px;padding:1.2rem;text-align:center;margin-bottom:.75rem;background:rgba(201,168,76,.04);transition:all .2s;">
+            <div style="font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:.3rem;">Drop JSON here or click Import JSON above</div>
+            <div style="font-size:.8rem;color:var(--text-muted);font-style:italic;">Supports old-world-builder.com exports &amp; this registry's own JSON format</div>
+          </div>
+          <div class="comp-budget" id="comp-budget">
+            <div>
+              <div class="comp-budget-label">Points Budget</div>
+              <div class="comp-budget-bar-wrap" style="width:160px"><div class="comp-budget-bar" id="comp-bar" style="width:0%"></div></div>
+            </div>
+            <div class="comp-budget-nums">
+              <span class="comp-budget-used" id="comp-used">0</span>
+              <span class="comp-budget-of">/ <span id="comp-max">—</span> pts</span>
+            </div>
+          </div>
+          <div class="unit-cards" id="unit-cards"></div>
+          <div style="display:flex;gap:.5rem;margin-bottom:.5rem;">
+            <button type="button" class="type-section-btn" data-add="Character">+ Character</button>
+            <button type="button" class="type-section-btn" data-add="Core">+ Core</button>
+            <button type="button" class="type-section-btn" data-add="Special">+ Special</button>
+            <button type="button" class="type-section-btn" data-add="Rare">+ Rare</button>
+          </div>
+        </div>
+
+        <div class="ff"><label>Battle Notes</label><textarea id="s-nt" rows="3" placeholder="Describe the battle, strategy, key moments…"></textarea></div>
+
+        <!-- OPPONENT COMPOSITION -->
+        <div style="border-top:1px solid var(--bf);padding-top:.9rem;margin-top:.2rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem;">
+            <span style="font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--aged);">Opponent's Composition</span>
+            <div style="display:flex;align-items:center;gap:.6rem;">
+              <label id="opp-import-label" style="font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);border:1px solid rgba(201,168,76,.25);padding:.22rem .7rem;border-radius:3px;cursor:pointer;transition:all .2s;" title="Import opponent's army JSON from old-world-builder.com">
+                ↑ Import JSON
+                <input type="file" id="opp-import-input" accept=".json" style="display:none">
+              </label>
+              <span style="font-size:.76rem;color:var(--text-muted);font-style:italic;">optional</span>
+            </div>
+          </div>
+          <!-- Opponent faction selector -->
+          <div class="ff" style="margin-bottom:.8rem;">
+            <label>Opponent's Faction</label>
+            <select id="opp-fac-comp">
+              <option value="">Select faction…</option>
+              <optgroup label="── Core Factions ──" disabled></optgroup>
+              <option>Empire of Man</option><option>Kingdom of Bretonnia</option><option>Dwarfen Mountain Holds</option>
+              <option>High Elf Realms</option><option>Wood Elf Realms</option>
+              <option>Orc &amp; Goblin Tribes</option><option>Warriors of Chaos</option>
+              <option>Beastmen Brayherds</option><option>Tomb Kings of Khemri</option>
+              <optgroup label="── New Factions ──" disabled></optgroup>
+              <option>Grand Cathay</option>
+              <optgroup label="── Legacy Factions ──" disabled></optgroup>
+              <option>Dark Elves</option><option>Skaven</option><option>Vampire Counts</option>
+              <option>Daemons of Chaos</option><option>Ogre Kingdoms</option>
+              <option>Lizardmen</option><option>Chaos Dwarfs</option>
+              <optgroup label="── Other ──" disabled></optgroup>
+              <option>Dogs of War</option><option>Kislev</option>
+              <option>Regiments of Renown</option><option>Realms of Men</option>
+            </select>
+          </div>
+          <div id="opp-drop-zone" style="display:none;border:1px dashed rgba(201,168,76,.3);border-radius:4px;padding:1.2rem;text-align:center;margin-bottom:.75rem;background:rgba(201,168,76,.04);transition:all .2s;">
+            <div style="font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:.3rem;">Drop opponent's JSON here</div>
+            <div style="font-size:.8rem;color:var(--text-muted);font-style:italic;">Supports old-world-builder.com exports</div>
+          </div>
+          <!-- Opp summary strip (shown after JSON import) -->
+          <div id="opp-summary" style="display:none;margin-bottom:.6rem;padding:.5rem .75rem;background:rgba(201,168,76,.05);border:1px solid var(--bf);border-radius:3px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span id="opp-summary-name" style="font-family:'Cinzel',serif;font-size:.82rem;color:var(--parchment)"></span>
+              <div style="display:flex;gap:.75rem;align-items:center;">
+                <span id="opp-summary-pts" style="font-family:'Cinzel',serif;font-size:.88rem;color:var(--gold-light)"></span>
+                <button type="button" id="opp-clear-btn" style="background:none;border:1px solid rgba(200,80,80,.3);color:rgba(200,80,80,.6);font-size:.65rem;padding:.18rem .5rem;border-radius:2px;cursor:pointer;" title="Clear opponent composition">✕</button>
+              </div>
+            </div>
+            <div id="opp-summary-units" style="margin-top:.35rem;display:flex;flex-wrap:wrap;gap:.3rem;"></div>
+          </div>
+          <!-- Opp manual builder (shown when no JSON imported) -->
+          <div id="opp-manual-builder">
+            <div class="comp-budget" id="opp-comp-budget">
+              <div>
+                <div class="comp-budget-label">Opponent's Points Budget</div>
+                <div class="comp-budget-bar-wrap" style="width:160px"><div class="comp-budget-bar" id="opp-comp-bar" style="width:0%"></div></div>
+              </div>
+              <div class="comp-budget-nums">
+                <span class="comp-budget-used" id="opp-comp-used">0</span>
+                <span class="comp-budget-of">/ <span id="opp-comp-max">—</span> pts</span>
+              </div>
+            </div>
+            <div class="unit-cards" id="opp-unit-cards"></div>
+            <div style="display:flex;gap:.5rem;margin-bottom:.5rem;">
+              <button type="button" class="type-section-btn opp-type-btn" data-add="Character">+ Character</button>
+              <button type="button" class="type-section-btn opp-type-btn" data-add="Core">+ Core</button>
+              <button type="button" class="type-section-btn opp-type-btn" data-add="Special">+ Special</button>
+              <button type="button" class="type-section-btn opp-type-btn" data-add="Rare">+ Rare</button>
+            </div>
+          </div>
+        </div>
+
+        <button class="subbtn" id="sub-btn">⚔ Record in the Chronicle</button>
+      </div>
+    </div>
+    <div>
+      <div class="panel" style="margin-bottom:1rem">
+        <div class="ptitle">✦ About the Registry</div>
+        <div style="font-size:.88rem;line-height:1.75;color:var(--parchment-dark);font-style:italic;">
+          <p style="margin-bottom:.75rem">Your records are saved to your browser's local storage and persist between sessions automatically.</p>
+          <p style="margin-bottom:.75rem">Include battle notes to remember key moments — a well-chronicled battle is worth more than a forgotten victory.</p>
+          <p>The Statistics page shows win rates by faction and points distribution. The Leaderboard tracks the most decorated commanders.</p>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ptitle">⚠ Data Management</div>
+        <p style="font-size:.84rem;color:var(--text-muted);font-style:italic;margin-bottom:1rem;">Export all records as JSON backup, or reset to default records.</p>
+        <div style="display:flex;gap:.6rem;">
+          <button class="subbtn" id="exp-btn" style="flex:1;font-size:.72rem;padding:.55rem;">Export JSON</button>
+          <button class="subbtn" id="rst-btn" style="flex:1;font-size:.72rem;padding:.55rem;border-color:rgba(180,60,60,.5);color:#d46060;">Reset All</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LEADERBOARD -->
+<div class="page" id="page-leaderboard">
+  <div class="lblayout" id="lb"></div>
+</div>
+
+<!-- CHARTS -->
+<div class="page" id="page-charts">
+  <div class="cgrd" id="cgrd"></div>
+</div>
+
+<!-- ROSTERS -->
+<div class="page" id="page-rosters">
+  <div class="fbar">
+    <div class="fg">
+      <span class="flbl">Faction:</span>
+      <select id="rf-fac"><option value="">All Factions</option></select>
+      <input type="text" id="rf-srch" placeholder="Search armies, commanders…" style="min-width:180px">
+    </div>
+    <select id="rf-sort">
+      <option value="newest">Newest First</option>
+      <option value="ph">Points High→Low</option>
+      <option value="most-units">Most Units</option>
+      <option value="wins">Victories First</option>
+    </select>
+  </div>
+  <div id="roster-cards"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SK='wow_v8';
+const FCSS={
+  "Empire of Man":"fce","Kingdom of Bretonnia":"fcb","Dwarfen Mountain Holds":"fcd",
+  "High Elf Realms":"fch","Wood Elf Realms":"fcw","Dark Elves":"fcde",
+  "Tomb Kings of Khemri":"fctk","Vampire Counts":"fcvc","Warriors of Chaos":"fccw",
+  "Beastmen Brayherds":"fcbm","Orc & Goblin Tribes":"fcog","Skaven":"fcsk",
+  "Lizardmen":"fclz","Ogre Kingdoms":"fcok","Chaos Dwarfs":"fccd","Dogs of War":"fcdw",
+  "Grand Cathay":"fcgc","Daemons of Chaos":"fcdc","Kislev":"fckv",
+  "Regiments of Renown":"fcrr","Realms of Men":"fcrm"
+};
+const FHEX={
+  "Empire of Man":"#4a7abf","Kingdom of Bretonnia":"#5c9e5c","Dwarfen Mountain Holds":"#bf7a2a",
+  "High Elf Realms":"#5aafaf","Wood Elf Realms":"#3d7a3d","Dark Elves":"#7a4abf",
+  "Tomb Kings of Khemri":"#bfaa40","Vampire Counts":"#8a3dbf","Warriors of Chaos":"#bf4040",
+  "Beastmen Brayherds":"#7a5c2a","Orc & Goblin Tribes":"#5c8a2a","Skaven":"#9a9a2a",
+  "Lizardmen":"#2a8a7a","Ogre Kingdoms":"#8a6030","Chaos Dwarfs":"#bf6a2a","Dogs of War":"#bf8a2a",
+  "Grand Cathay":"#c44a4a","Daemons of Chaos":"#8a2abf","Kislev":"#4a8abf",
+  "Regiments of Renown":"#6a6a6a","Realms of Men":"#7a6a4a"
+};
+// ── FACTION ICONS (inline SVG, CC-inspired thematic symbols) ──
+const FACTION_ICONS={
+  "Empire of Man":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Griffon-headed two-tailed comet / Imperial cross -->
+    <circle cx="16" cy="16" r="13" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2"/>
+    <path d="M16 4v24M4 16h24" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M10 10l12 12M22 10L10 22" stroke="currentColor" stroke-width="1"/>
+    <circle cx="16" cy="16" r="3.5" stroke="currentColor" stroke-width="1.4" fill="currentColor" fill-opacity="0.15"/>
+    <path d="M16 9l1.2 3.6H21l-3 2.2 1.1 3.4L16 16l-3.1 2.2 1.1-3.4-3-2.2h3.8z" stroke="currentColor" stroke-width="1" fill="currentColor" fill-opacity="0.3"/>
+  </svg>`,
+  "Kingdom of Bretonnia":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Fleur-de-lis -->
+    <path d="M16 4c0 0-2 2-2 5s2 4 2 4-2 1-2 5h4c0-4-2-5-2-5s2-1 2-4-2-5-2-5z" stroke="currentColor" stroke-width="1.3" fill="currentColor" fill-opacity="0.12"/>
+    <path d="M10 11c-3 0-5 2-5 4s2 3 4 3c0 0-1-2 1-4 1.5-1.5 3-1 3-1s-1-2-3-2z" stroke="currentColor" stroke-width="1.2" fill="currentColor" fill-opacity="0.12"/>
+    <path d="M22 11c3 0 5 2 5 4s-2 3-4 3c0 0 1-2-1-4-1.5-1.5-3-1-3-1s1-2 3-2z" stroke="currentColor" stroke-width="1.2" fill="currentColor" fill-opacity="0.12"/>
+    <path d="M13 18h6M14 18v8h-2l2-4-2 4h8l-2-4 2 4h-2v-8" stroke="currentColor" stroke-width="1.2"/>
+    <circle cx="16" cy="18.5" r="1" fill="currentColor"/>
+  </svg>`,
+  "Dwarfen Mountain Holds":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Dwarf ancestor face / rune axe -->
+    <path d="M8 28h16M10 28V16L16 5l6 11v12" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M12 28v-6h8v6" stroke="currentColor" stroke-width="1.2"/>
+    <path d="M10 16h12M11 12h10M13 9h6" stroke="currentColor" stroke-width="1.1"/>
+    <!-- Rune -->
+    <path d="M15 20v4M17 20v4M15 22h2" stroke="currentColor" stroke-width="1"/>
+    <!-- Cog wheel hints -->
+    <circle cx="16" cy="8" r="1.5" stroke="currentColor" stroke-width="1"/>
+    <path d="M14.5 6.5l-1-1M17.5 6.5l1-1M14.5 9.5l-1 1M17.5 9.5l1 1" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+  </svg>`,
+  "High Elf Realms":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Phoenix / Asur star -->
+    <path d="M16 4l2.4 7H24l-5.6 4.1 2.1 6.5L16 18l-4.5 3.6 2.1-6.5L8 11h5.6z" stroke="currentColor" stroke-width="1.3" fill="currentColor" fill-opacity="0.1"/>
+    <path d="M16 18v8" stroke="currentColor" stroke-width="1.3"/>
+    <path d="M12 22c0 0 2 2 4 2s4-2 4-2" stroke="currentColor" stroke-width="1.2"/>
+    <!-- Wing hints -->
+    <path d="M8 11L4 8M24 11l4-3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+    <path d="M6 16L3 15M26 16l3-1" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+  </svg>`,
+  "Wood Elf Realms":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Oak / Athel Loren tree -->
+    <path d="M16 26V15" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M16 15c0 0-5-3-7-8 4 0 7 3 7 3s3-3 7-3c-2 5-7 8-7 8z" stroke="currentColor" stroke-width="1.2" fill="currentColor" fill-opacity="0.12"/>
+    <path d="M16 19c0 0-4-2-5-6 3 0 5 2 5 2s2-2 5-2c-1 4-5 6-5 6z" stroke="currentColor" stroke-width="1.2" fill="currentColor" fill-opacity="0.15"/>
+    <path d="M16 23c0 0-3-1-4-4 2.5 0 4 2 4 2s1.5-2 4-2c-1 3-4 4-4 4z" stroke="currentColor" stroke-width="1.2" fill="currentColor" fill-opacity="0.18"/>
+    <path d="M13 26h6" stroke="currentColor" stroke-width="1.4"/>
+    <path d="M12 19l-3 2M20 19l3 2M11 23l-2 1M21 23l2 1" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+  </svg>`,
+  "Dark Elves":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Black ark / hydra / dark star -->
+    <path d="M16 4l4 8 8 2-6 6 1 8-7-4-7 4 1-8-6-6 8-2z" stroke="currentColor" stroke-width="1.3" fill="currentColor" fill-opacity="0.08"/>
+    <path d="M16 8v16M10 11l12 10M22 11L10 21" stroke="currentColor" stroke-width="1" stroke-opacity="0.6"/>
+    <circle cx="16" cy="16" r="3" stroke="currentColor" stroke-width="1.2"/>
+    <path d="M13 13l-2-2M19 13l2-2M13 19l-2 2M19 19l2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+  </svg>`,
+  "Tomb Kings of Khemri":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Pyramid / Khepri scarab -->
+    <path d="M5 26h22L16 5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="currentColor" fill-opacity="0.08"/>
+    <path d="M9.5 22h13M12 18h8M14 14h4" stroke="currentColor" stroke-width="1.1"/>
+    <!-- Eye of Khemri -->
+    <ellipse cx="16" cy="20" rx="2.5" ry="1.5" stroke="currentColor" stroke-width="1"/>
+    <circle cx="16" cy="20" r="0.8" fill="currentColor"/>
+    <path d="M16 26v-4.5" stroke="currentColor" stroke-width="1"/>
+  </svg>`,
+  "Vampire Counts":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Bat wings / Von Carstein crest -->
+    <path d="M16 10c-2 0-3 2-3 4s1 4 3 4 3-2 3-4-1-4-3-4z" stroke="currentColor" stroke-width="1.3" fill="currentColor" fill-opacity="0.12"/>
+    <!-- Bat wings -->
+    <path d="M13 13c-1-1-3-2-6-1-2 1-4 3-3 5 1 1 3 1 4 0M19 13c1-1 3-2 6-1 2 1 4 3 3 5-1 1-3 1-4 0" stroke="currentColor" stroke-width="1.2" fill="currentColor" fill-opacity="0.1"/>
+    <path d="M10 17L7 19M22 17l3 2" stroke="currentColor" stroke-width="1"/>
+    <!-- Fangs -->
+    <path d="M14.5 17.5l-1 4M17.5 17.5l1 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <!-- Drop of blood -->
+    <path d="M16 22c0 0-1.5 2-1.5 3a1.5 1.5 0 003 0c0-1-1.5-3-1.5-3z" stroke="currentColor" stroke-width="1" fill="currentColor" fill-opacity="0.2"/>
+  </svg>`,
+  "Warriors of Chaos":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Chaos star / 8-pointed star of Chaos -->
+    <circle cx="16" cy="16" r="4" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.1"/>
+    <path d="M16 4v6M16 22v6M4 16h6M22 16h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M7.8 7.8l4.2 4.2M19.9 19.9l4.2 4.2M24.2 7.8l-4.2 4.2M12 19.9l-4.2 4.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- Arrow tips on each spoke -->
+    <path d="M16 4l-1 2h2zM16 28l-1-2h2zM4 16l2-1v2zM28 16l-2-1v2z" fill="currentColor"/>
+    <path d="M7.8 7.8l2.1.7-.7-2.1zM24.2 7.8l-.7 2.1 2.1-.7zM7.8 24.2l.7-2.1-2.1.7zM24.2 24.2l-2.1-.7.7 2.1z" fill="currentColor"/>
+  </svg>`,
+  "Beastmen Brayherds":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Bray-shaman horned skull -->
+    <circle cx="16" cy="14" r="6" stroke="currentColor" stroke-width="1.4" fill="currentColor" fill-opacity="0.08"/>
+    <!-- Curved horns -->
+    <path d="M10 10c-2-3-4-5-3-7 1-1 3 0 4 3M22 10c2-3 4-5 3-7-1-1-3 0-4 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+    <!-- Face -->
+    <circle cx="13.5" cy="13" r="1.2" fill="currentColor" fill-opacity="0.4"/>
+    <circle cx="18.5" cy="13" r="1.2" fill="currentColor" fill-opacity="0.4"/>
+    <path d="M13 16.5c1-1 5-1 6 0" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+    <path d="M16 20v6M13 26h6" stroke="currentColor" stroke-width="1.3"/>
+    <path d="M10 26l3-6M22 26l-3-6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+  </svg>`,
+  "Orc & Goblin Tribes":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Orcish skull with tusks / Waaagh fist -->
+    <circle cx="16" cy="12" r="7" stroke="currentColor" stroke-width="1.4" fill="currentColor" fill-opacity="0.08"/>
+    <!-- Brow ridge -->
+    <path d="M9 10c2-2 14-2 14 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- Eyes -->
+    <circle cx="13" cy="12" r="1.5" fill="currentColor" fill-opacity="0.5"/>
+    <circle cx="19" cy="12" r="1.5" fill="currentColor" fill-opacity="0.5"/>
+    <!-- Tusks -->
+    <path d="M13 18l-2 4M19 18l2 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- Jaw -->
+    <path d="M10 16c1 3 11 3 12 0" stroke="currentColor" stroke-width="1.3"/>
+    <!-- Nostrils -->
+    <path d="M14.5 14.5h1M16.5 14.5h1" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+  </svg>`,
+  "Skaven":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Rat skull / horned rat -->
+    <ellipse cx="16" cy="13" rx="6" ry="5" stroke="currentColor" stroke-width="1.4" fill="currentColor" fill-opacity="0.08"/>
+    <!-- Big ears -->
+    <path d="M10 10c-1-3-5-4-5-4s1 3 3 4M22 10c1-3 5-4 5-4s-1 3-3 4" stroke="currentColor" stroke-width="1.3"/>
+    <!-- Eyes -->
+    <circle cx="13.5" cy="12" r="1.3" fill="currentColor" fill-opacity="0.5"/>
+    <circle cx="18.5" cy="12" r="1.3" fill="currentColor" fill-opacity="0.5"/>
+    <!-- Snout -->
+    <ellipse cx="16" cy="15.5" rx="2.5" ry="1.5" stroke="currentColor" stroke-width="1.1"/>
+    <circle cx="15" cy="15.5" r="0.5" fill="currentColor"/>
+    <circle cx="17" cy="15.5" r="0.5" fill="currentColor"/>
+    <!-- Tail -->
+    <path d="M16 18c0 4 2 6 2 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+    <!-- Horns -->
+    <path d="M13 8l-1-3M19 8l1-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+  </svg>`,
+  "Lizardmen":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Slann / Serpent sun disc -->
+    <circle cx="16" cy="13" r="7" stroke="currentColor" stroke-width="1.4" fill="currentColor" fill-opacity="0.08"/>
+    <!-- Reptile eyes -->
+    <ellipse cx="13" cy="12" rx="1.5" ry="2" stroke="currentColor" stroke-width="1"/>
+    <ellipse cx="19" cy="12" rx="1.5" ry="2" stroke="currentColor" stroke-width="1"/>
+    <path d="M13 11v2M19 11v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- Crest -->
+    <path d="M12 7l-1-3M14 6.5l-0.5-3M16 6.2l0-3M18 6.5l0.5-3M20 7l1-3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+    <!-- Forked tongue -->
+    <path d="M14 17c1 2 3 2 4 0M15 17l-1 3M17 17l1 3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+    <path d="M16 20v6M13 26h6" stroke="currentColor" stroke-width="1.2"/>
+  </svg>`,
+  "Ogre Kingdoms":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Massive brute head -->
+    <ellipse cx="16" cy="12" rx="8" ry="7" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.08"/>
+    <!-- Heavy brow -->
+    <path d="M8 10c2-3 16-3 16 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <!-- Eyes -->
+    <circle cx="12.5" cy="11.5" r="1.8" fill="currentColor" fill-opacity="0.4"/>
+    <circle cx="19.5" cy="11.5" r="1.8" fill="currentColor" fill-opacity="0.4"/>
+    <!-- Flat nose -->
+    <rect x="14" y="13" width="4" height="2.5" rx="1" stroke="currentColor" stroke-width="1" fill="currentColor" fill-opacity="0.1"/>
+    <!-- Tusks and mouth -->
+    <path d="M12 16c1 2 10 2 11 0" stroke="currentColor" stroke-width="1.3"/>
+    <path d="M13 17l-1 4M19 17l1 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M10 26h12" stroke="currentColor" stroke-width="1.3"/>
+  </svg>`,
+  "Chaos Dwarfs":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Daemonic bull helm / Hashut -->
+    <path d="M8 26h16M10 26V17L16 7l6 10v9" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M12 26v-6h8v6" stroke="currentColor" stroke-width="1.2"/>
+    <!-- Bull horns -->
+    <path d="M12 9c-2-3-6-4-6-4s1 3 4 5M20 9c2-3 6-4 6-4s-1 3-4 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <!-- Chaos rune -->
+    <path d="M14 14h4M16 12v4M14 12l4 4M18 12l-4 4" stroke="currentColor" stroke-width="1" stroke-opacity="0.8"/>
+    <circle cx="16" cy="14" r="3" stroke="currentColor" stroke-width="1" stroke-opacity="0.6"/>
+  </svg>`,
+  "Dogs of War":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Mercenary coin / crossed swords over shield -->
+    <path d="M16 4l10 6v12l-10 6L6 22V10z" stroke="currentColor" stroke-width="1.3" fill="currentColor" fill-opacity="0.06"/>
+    <!-- Crossed swords -->
+    <path d="M10 10l12 12M22 10L10 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- Guard crossguards -->
+    <path d="M8.5 11.5l3-3M20.5 11.5l-3-3M8.5 20.5l3 3M20.5 20.5l-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <!-- Central coin -->
+    <circle cx="16" cy="16" r="3" stroke="currentColor" stroke-width="1.2" fill="currentColor" fill-opacity="0.12"/>
+    <text x="16" y="17.5" text-anchor="middle" font-size="4" fill="currentColor" opacity="0.7" font-family="serif">$</text>
+  </svg>`,
+  "Grand Cathay":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Cathayan dragon coil -->
+    <path d="M16 5c-5 0-9 4-9 9 0 3 1.5 5.5 4 7l-1 7h12l-1-7c2.5-1.5 4-4 4-7 0-5-4-9-9-9z" stroke="currentColor" stroke-width="1.3" fill="currentColor" fill-opacity="0.07"/>
+    <!-- Yin-yang hint -->
+    <circle cx="14" cy="14" r="2" fill="currentColor" fill-opacity="0.35"/>
+    <circle cx="18" cy="18" r="2" fill="currentColor" fill-opacity="0.08" stroke="currentColor" stroke-width="0.8"/>
+    <circle cx="14" cy="14" r="0.7" fill="currentColor" fill-opacity="0.05"/>
+    <circle cx="18" cy="18" r="0.7" fill="currentColor" fill-opacity="0.5"/>
+    <!-- Lantern-style horns -->
+    <path d="M12 7l-2-3M20 7l2-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M16 5l0-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M13 21h6" stroke="currentColor" stroke-width="1.2"/>
+  </svg>`,
+  "Daemons of Chaos":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 4 gods mark / portal -->
+    <circle cx="16" cy="16" r="12" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2"/>
+    <circle cx="16" cy="16" r="7" stroke="currentColor" stroke-width="1.3"/>
+    <circle cx="16" cy="16" r="3" stroke="currentColor" stroke-width="1.4" fill="currentColor" fill-opacity="0.15"/>
+    <!-- 8-point star rays -->
+    <path d="M16 4v5M16 23v5M4 16h5M23 16h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M8.5 8.5l3.5 3.5M19.9 19.9l3.5 3.5M23.5 8.5l-3.5 3.5M12 20l-3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    <!-- Arrow tips -->
+    <path d="M16 4l-1 2h2zM16 28l1-2h-2zM4 16l2 1v-2zM28 16l-2-1v2z" fill="currentColor"/>
+  </svg>`,
+  "Kislev":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Ice crystal / Winged bear -->
+    <path d="M16 3l3 5h5l-4 4 1.5 5.5L16 15l-5.5 2.5L12 12 8 8h5z" stroke="currentColor" stroke-width="1.3" fill="currentColor" fill-opacity="0.08"/>
+    <!-- Snowflake arms -->
+    <path d="M16 3v26M4 16h24" stroke="currentColor" stroke-width="1" stroke-opacity="0.5"/>
+    <path d="M8 8l16 16M24 8L8 24" stroke="currentColor" stroke-width="1" stroke-opacity="0.5"/>
+    <!-- Ice gems at tips -->
+    <circle cx="16" cy="3" r="1.2" fill="currentColor"/>
+    <circle cx="16" cy="29" r="1.2" fill="currentColor"/>
+    <circle cx="3" cy="16" r="1.2" fill="currentColor"/>
+    <circle cx="29" cy="16" r="1.2" fill="currentColor"/>
+    <circle cx="7" cy="7" r="1.2" fill="currentColor"/>
+    <circle cx="25" cy="25" r="1.2" fill="currentColor"/>
+    <circle cx="25" cy="7" r="1.2" fill="currentColor"/>
+    <circle cx="7" cy="25" r="1.2" fill="currentColor"/>
+    <!-- Centre -->
+    <circle cx="16" cy="16" r="2.5" stroke="currentColor" stroke-width="1.2" fill="currentColor" fill-opacity="0.2"/>
+  </svg>`,
+  "Regiments of Renown":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Heraldic banner / pennant -->
+    <path d="M8 5h16v14l-8 8-8-8z" stroke="currentColor" stroke-width="1.4" fill="currentColor" fill-opacity="0.08"/>
+    <path d="M11 10h10M11 13.5h10M11 17h6" stroke="currentColor" stroke-width="1.1"/>
+    <path d="M16 5V3M8 5l-3-2M24 5l3-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M16 27v-5" stroke="currentColor" stroke-width="1.3"/>
+  </svg>`,
+  "Realms of Men":`<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Simple human figure with spear -->
+    <circle cx="16" cy="7" r="3.5" stroke="currentColor" stroke-width="1.4"/>
+    <path d="M16 11v9M12 14h8M13 20l-3 8M19 20l3 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+    <path d="M22 6l-4 16" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M22 3l-1 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </svg>`
+};
+
+function factionIconSVG(faction){
+  const svg=FACTION_ICONS[faction];
+  if(!svg) return '';
+  return svg;
+}
+
+function factionIconEl(faction, size=18){
+  const svg=FACTION_ICONS[faction];
+  if(!svg) return '';
+  const color=FHEX[faction]||'#c9a84c';
+  // Inject color directly — currentColor does not propagate into SVGs via innerHTML
+  const colored=svg
+    .replace(/stroke="currentColor"/g,`stroke="${color}"`)
+    .replace(/fill="currentColor"/g,`fill="${color}"`)
+    .replace(/<svg /,`<svg width="${size}" height="${size}" `);
+  return `<span class="faction-icon" style="display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:middle">${colored}</span>`;
+}
+
+const SEED=[
+  {id:1,player:"Magister Voss",name:"Steamtank Vanguard",faction:"Empire of Man",points:2250,oppPoints:2250,result:"Win",opponent:"Warriors of Chaos",event:"The Altdorf Grand Muster",notes:"Steam tank held the left flank while halberdiers ground through the chaos warriors. Won on battle points 14–6.",date:"2026-02-14",likes:12,oppUnits:[],
+    units:[{name:"Wizard Lord",type:"Character",models:1,ppm:null,base:0,total:210,magic:"Lore of Fire",rules:"",upgrades:[],notes:""},{name:"Captain of the Empire",type:"Character",models:1,ppm:null,base:0,total:95,magic:"Sword of Might",rules:"",upgrades:[],notes:""},{name:"Halberdiers",type:"Core",models:30,ppm:7,base:0,total:210,magic:"",rules:"",upgrades:[{name:"Full Command",pts:30}],notes:""},{name:"Handgunners",type:"Core",models:20,ppm:8,base:0,total:160,magic:"",rules:"",upgrades:[],notes:""},{name:"Greatswords",type:"Special",models:20,ppm:13,base:0,total:270,magic:"",rules:"Stubborn",upgrades:[{name:"Full Command",pts:10}],notes:""},{name:"Outriders",type:"Special",models:5,ppm:23,base:0,total:115,magic:"",rules:"",upgrades:[],notes:""},{name:"Steam Tank",type:"Rare",models:1,ppm:null,base:0,total:300,magic:"",rules:"",upgrades:[],notes:""}]},
+  {id:2,player:"Grimnar Stonebrew",name:"The Grudgebound Legion",faction:"Dwarfen Mountain Holds",points:2000,oppPoints:2000,result:"Draw",opponent:"Orc & Goblin Tribes",event:"",notes:"Night goblin fanatics caused absolute chaos on turn 2. Held the line but couldn't push into their territory.",date:"2026-01-30",likes:7,oppUnits:[],
+    units:[{name:"Thane (BSB)",type:"Character",models:1,ppm:null,base:0,total:145,magic:"Master Rune of Gromril",rules:"Battle Standard Bearer",upgrades:[],notes:""},{name:"Runesmith",type:"Character",models:1,ppm:null,base:0,total:100,magic:"Rune of Spellbreaking",rules:"",upgrades:[],notes:""},{name:"Warriors",type:"Core",models:25,ppm:9,base:0,total:225,magic:"",rules:"",upgrades:[{name:"Full Command",pts:30}],notes:""},{name:"Quarrellers",type:"Core",models:20,ppm:10,base:0,total:200,magic:"",rules:"",upgrades:[],notes:""},{name:"Hammerers",type:"Special",models:20,ppm:14,base:0,total:280,magic:"",rules:"Stubborn, Bodyguard",upgrades:[{name:"Full Command",pts:30}],notes:""},{name:"Bolt Thrower",type:"Special",models:1,ppm:null,base:0,total:65,magic:"",rules:"",upgrades:[],notes:""},{name:"Grudge Thrower",type:"Rare",models:1,ppm:null,base:0,total:90,magic:"",rules:"",upgrades:[],notes:""}]},
+  {id:3,player:"Seraphine du Lac",name:"Knights of the Realm Errant",faction:"Kingdom of Bretonnia",points:2500,oppPoints:2500,result:"Win",opponent:"Skaven",event:"Mousilon Winter League",notes:"The Lady was with us. Grail knights broke the Skaven line in a single devastating charge on turn 3.",date:"2026-03-01",likes:19,oppUnits:[],
+    units:[{name:"Paladin (General)",type:"Character",models:1,ppm:null,base:0,total:170,magic:"Virtue of Noble Disdain",rules:"General",upgrades:[],notes:""},{name:"Paladin (BSB)",type:"Character",models:1,ppm:null,base:0,total:130,magic:"Banner of the Lady",rules:"Battle Standard Bearer",upgrades:[],notes:""},{name:"Damsel",type:"Character",models:1,ppm:null,base:0,total:105,magic:"",rules:"Lore of Beasts",upgrades:[],notes:""},{name:"Knights Errant",type:"Core",models:8,ppm:24,base:0,total:196,magic:"",rules:"Errantry Banner",upgrades:[{name:"Full Command",pts:4}],notes:""},{name:"Knights of the Realm",type:"Core",models:8,ppm:27,base:0,total:220,magic:"",rules:"",upgrades:[{name:"Full Command",pts:4}],notes:""},{name:"Men-at-Arms",type:"Core",models:30,ppm:5,base:0,total:150,magic:"",rules:"",upgrades:[],notes:""},{name:"Pegasus Knights",type:"Special",models:3,ppm:65,base:0,total:195,magic:"",rules:"Fly",upgrades:[],notes:""},{name:"Grail Knights",type:"Rare",models:6,ppm:48,base:0,total:288,magic:"",rules:"Immune to Psychology, Grail Vow",upgrades:[],notes:""}]},
+  {id:4,player:"Arkhan the Scribe",name:"Legions of Khemri",faction:"Tomb Kings of Khemri",points:3000,oppPoints:2750,result:"Loss",opponent:"High Elf Realms",event:"",notes:"Dragon prince cavalry flanked my archers twice. The Liche Priest miscasted on turn 4 — a disaster.",date:"2026-03-10",likes:5,oppUnits:[],
+    units:[{name:"Tomb King",type:"Character",models:1,ppm:null,base:0,total:220,magic:"Blade of Antarhak",rules:"Undying Will",upgrades:[],notes:""},{name:"Liche Priest",type:"Character",models:1,ppm:null,base:0,total:140,magic:"Hieratic Jar",rules:"Lore of Nehekhara",upgrades:[],notes:""},{name:"Tomb Prince",type:"Character",models:1,ppm:null,base:0,total:110,magic:"",rules:"",upgrades:[],notes:""},{name:"Skeleton Warriors",type:"Core",models:30,ppm:7,base:0,total:210,magic:"",rules:"",upgrades:[{name:"Full Command",pts:30}],notes:""},{name:"Skeleton Archers",type:"Core",models:20,ppm:7,base:0,total:140,magic:"",rules:"",upgrades:[],notes:""},{name:"Tomb Guard",type:"Special",models:20,ppm:15,base:0,total:300,magic:"",rules:"Killing Blow",upgrades:[{name:"Full Command",pts:30}],notes:""},{name:"Ushabti",type:"Special",models:3,ppm:65,base:0,total:195,magic:"",rules:"Large Target",upgrades:[],notes:""},{name:"Bone Giant",type:"Rare",models:1,ppm:null,base:0,total:220,magic:"",rules:"Large Target, Terror",upgrades:[],notes:""}]},
+  {id:5,player:"Grakk Ironteef",name:"Da Waaagh! Mob",faction:"Orc & Goblin Tribes",points:2000,oppPoints:2000,result:"Win",opponent:"Vampire Counts",event:"Badlands Brawl GT",notes:"Black orcs and a giant made short work of the skeletons. WAAAGH! echoed across the battlefield.",date:"2026-03-18",likes:14,oppUnits:[],
+    units:[{name:"Orc Warboss",type:"Character",models:1,ppm:null,base:0,total:165,magic:"Battleaxe of the Last Waaagh!",rules:"",upgrades:[],notes:""},{name:"Night Goblin Shaman",type:"Character",models:1,ppm:null,base:0,total:80,magic:"",rules:"Lore of da Little Waaagh!",upgrades:[],notes:""},{name:"Orc Boyz",type:"Core",models:30,ppm:7,base:0,total:210,magic:"",rules:"",upgrades:[{name:"Full Command",pts:30},{name:"Shields",pts:30}],notes:""},{name:"Night Goblins",type:"Core",models:40,ppm:4,base:0,total:160,magic:"",rules:"",upgrades:[{name:"3× Fanatics",pts:45}],notes:""},{name:"Black Orcs",type:"Special",models:20,ppm:14,base:0,total:280,magic:"",rules:"Immune to Psychology",upgrades:[{name:"Full Command",pts:30}],notes:""},{name:"Boar Boyz",type:"Special",models:10,ppm:15,base:0,total:150,magic:"",rules:"",upgrades:[],notes:""},{name:"Giant",type:"Rare",models:1,ppm:null,base:0,total:200,magic:"",rules:"Large Target, Terror, Stubborn",upgrades:[],notes:""}]},
+  {id:6,player:"Illindra Moonwhisper",name:"Asur Spearhead",faction:"High Elf Realms",points:2250,oppPoints:2250,result:"Win",opponent:"Beastmen Brayherds",event:"The Silver Tourney",notes:"Silver helms and dragon princes swept the flanks. White lions held the center with grim determination.",date:"2026-03-05",likes:8,units:[],oppUnits:[]},
+  {id:7,player:"Count Vlad",name:"Undying Court of Sylvania",faction:"Vampire Counts",points:2750,oppPoints:2750,result:"Loss",opponent:"Empire of Man",event:"",notes:"Outnumbered by free company and handgunners. The steam tank barreled through my skeleton horde.",date:"2026-02-22",likes:6,units:[],oppUnits:[]},
+  {id:8,player:"Skritt Scuttlefang",name:"Plague Monks Incursion",faction:"Skaven",points:1750,oppPoints:1750,result:"Win",opponent:"Dwarfen Mountain Holds",event:"Badlands Brawl GT",notes:"Poison wind globadiers broke the Dwarf gunline. Three units of plague monks overwhelmed the hold-guards.",date:"2026-03-15",likes:9,units:[],oppUnits:[]}
+];
+
+let armies=[], nextId=1, selR='', liked=new Set(), charts={};
+
+// ── API CONFIG ──
+// Replace this with your deployed Worker URL after running: wrangler deploy
+const API = 'https://wow-registry-api.battlemarch.workers.dev';
+
+// ── SESSION STATE ──
+let authToken  = localStorage.getItem('wow_token')  || null;
+let authUser   = localStorage.getItem('wow_user')   || null;
+let authUserId = localStorage.getItem('wow_userid') || null;
+
+// ── AUTH UI ──
+function switchAuthTab(tab) {
+  document.getElementById('form-login').style.display  = tab === 'login'  ? '' : 'none';
+  document.getElementById('form-signup').style.display = tab === 'signup' ? '' : 'none';
+  document.getElementById('tab-login').classList.toggle('on',  tab === 'login');
+  document.getElementById('tab-signup').classList.toggle('on', tab === 'signup');
+  document.getElementById('auth-err').classList.remove('show');
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-err');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function setAuthBusy(busy) {
+  ['li-btn','su-btn'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) b.disabled = busy;
+  });
+}
+
+async function doLogin() {
+  const email = document.getElementById('li-email').value.trim();
+  const pass  = document.getElementById('li-pass').value;
+  if (!email || !pass) { showAuthError('Please fill in all fields.'); return; }
+
+  // ── Local dev bypass ──
+  if ((email === 'admin' || email === 'admin@local') && pass === 'admin') {
+    onAuthSuccess({ token: 'local-dev-token', username: 'admin', email: 'admin@local', userId: 0 });
+    return;
+  }
+
+  setAuthBusy(true);
+  try {
+    const res  = await fetch(`${API}/api/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass })
+    });
+    const data = await res.json();
+    if (!res.ok) { showAuthError(data.error || 'Login failed.'); return; }
+    onAuthSuccess(data);
+  } catch(e) {
+    showAuthError('Could not reach the server. Check your connection.');
+  } finally { setAuthBusy(false); }
+}
+
+async function doSignup() {
+  const username = document.getElementById('su-user').value.trim();
+  const email    = document.getElementById('su-email').value.trim();
+  const pass     = document.getElementById('su-pass').value;
+  if (!username || !email || !pass) { showAuthError('Please fill in all fields.'); return; }
+  setAuthBusy(true);
+  try {
+    const res  = await fetch(`${API}/api/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password: pass })
+    });
+    const data = await res.json();
+    if (!res.ok) { showAuthError(data.error || 'Signup failed.'); return; }
+    onAuthSuccess(data);
+  } catch(e) {
+    showAuthError('Could not reach the server. Check your connection.');
+  } finally { setAuthBusy(false); }
+}
+
+function onAuthSuccess(data) {
+  authToken  = data.token;
+  authUser   = data.username;
+  authUserId = data.userId;
+  localStorage.setItem('wow_token',  authToken);
+  localStorage.setItem('wow_user',   authUser);
+  localStorage.setItem('wow_userid', authUserId);
+  document.getElementById('auth-overlay').classList.add('hidden');
+  document.getElementById('user-pill').style.display = 'flex';
+  document.getElementById('user-name').textContent   = authUser;
+  // Pre-fill commander name with logged-in username and lock it
+  const plField = document.getElementById('s-pl');
+  if (plField) {
+    plField.value    = authUser;
+    plField.readOnly = true;
+    plField.style.opacity = '0.7';
+    plField.style.cursor  = 'default';
+  }
+  load();
+}
+
+async function doLogout() {
+  try {
+    await fetch(`${API}/api/logout`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+  } catch(e) {}
+  authToken = authUser = authUserId = null;
+  localStorage.removeItem('wow_token');
+  localStorage.removeItem('wow_user');
+  localStorage.removeItem('wow_userid');
+  armies = []; liked.clear();
+  renderCards();
+  document.getElementById('user-pill').style.display = 'none';
+  document.getElementById('auth-overlay').classList.remove('hidden');
+}
+
+// ── Enter on password field triggers login/signup ──
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('li-pass')?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  document.getElementById('su-pass')?.addEventListener('keydown', e => { if(e.key==='Enter') doSignup(); });
+
+  // ── Build faction icon ring ──
+  const ring = document.getElementById('faction-ring');
+  if (ring) {
+    const allFactions = Object.keys(FACTION_ICONS);
+    const total  = allFactions.length;
+    const radius = 358; // pixels from centre to icon centre (scene is 640px wide)
+
+    allFactions.forEach((faction, i) => {
+      const angleDeg = (360 / total) * i - 90; // -90 starts at the top
+      const angleRad = angleDeg * Math.PI / 180;
+      // Position relative to the centre of the ring div (which is inset:0 = 640×640)
+      const cx = 400 + Math.cos(angleRad) * radius; // 320 = half of 640
+      const cy = 400 + Math.sin(angleRad) * radius;
+
+      const color  = FHEX[faction] || '#c9a84c';
+      const rawSvg = (FACTION_ICONS[faction] || '')
+        .replace(/stroke="currentColor"/g, `stroke="${color}"`)
+        .replace(/fill="currentColor"/g,   `fill="${color}"`)
+        .replace(/<svg /, `<svg width="28" height="28" `);
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'ring-icon';
+      // Place icon centred on (cx, cy) — icon is 52×52 so offset by 26
+      wrapper.style.left    = (cx - 26) + 'px';
+      wrapper.style.top     = (cy - 26) + 'px';
+      // Override the CSS top/left:50% since we're setting absolute px
+      wrapper.style.margin  = '0';
+
+      const inner = document.createElement('div');
+      inner.className = 'ring-icon-inner';
+      inner.title     = faction;
+      inner.innerHTML = rawSvg;
+
+      wrapper.appendChild(inner);
+      ring.appendChild(wrapper);
+    });
+  }
+
+  // If already have a token, restore session
+  if (authToken && authUser) {
+    document.getElementById('auth-overlay').classList.add('hidden');
+    document.getElementById('user-pill').style.display = 'flex';
+    document.getElementById('user-name').textContent   = authUser;
+    const plField = document.getElementById('s-pl');
+    if (plField) {
+      plField.value    = authUser;
+      plField.readOnly = true;
+      plField.style.opacity = '0.7';
+      plField.style.cursor  = 'default';
+    }
+  }
+});
+
+// ── API helpers ──
+function apiHeaders() {
+  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` };
+}
+
+// ── load() — fetch armies from API ──
+async function load() {
+  if (!authToken) return;
+
+  // Local dev bypass — use seed data instead of API
+  if (authToken === 'local-dev-token') {
+    armies = SEED.map(a => ({...a}));
+    nextId = 9;
+    renderCards(); renderLB(); renderCharts(); renderRosters(); updateStats();
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/api/armies`, { headers: apiHeaders() });
+    if (res.status === 401) { doLogout(); return; }
+    const data = await res.json();
+    armies = data.armies || [];
+    nextId = armies.length ? Math.max(...armies.map(a => a.id || 0)) + 1 : 1;
+  } catch(e) {
+    showToast('⚠ Could not load armies from server.', true);
+    armies = [];
+  }
+  renderCards();
+  renderLB();
+  renderCharts();
+  renderRosters();
+  updateStats();
+}
+
+// ── save() — persist a single army to API ──
+// Called after submit; armies already have a local .id
+// We also store the DB row id on the army as ._dbId for updates/deletes
+async function save() {
+  // Nothing to do here — individual operations call saveArmy/deleteArmy
+}
+
+async function saveArmy(army) {
+  if (!authToken || authToken === 'local-dev-token') return;
+  try {
+    if (army._dbId) {
+      // Update existing
+      await fetch(`${API}/api/armies/${army._dbId}`, {
+        method: 'PUT',
+        headers: apiHeaders(),
+        body: JSON.stringify(army)
+      });
+    } else {
+      // Create new
+      const res  = await fetch(`${API}/api/armies`, {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify(army)
+      });
+      const data = await res.json();
+      army._dbId = data.dbId;
+    }
+  } catch(e) {
+    showToast('⚠ Could not save to server.', true);
+  }
+}
+
+async function deleteArmy(army) {
+  if (!authToken || authToken === 'local-dev-token' || !army._dbId) return;
+  try {
+    await fetch(`${API}/api/armies/${army._dbId}`, {
+      method: 'DELETE',
+      headers: apiHeaders()
+    });
+  } catch(e) {
+    showToast('⚠ Could not delete from server.', true);
+  }
+}
+
+// ── PROFANITY FILTER ──
+const PROFANITY = [
+  'fuck','fucking','fucker','fucked','fucks','f\\*ck','f.ck',
+  'shit','shitting','shitter','shitted','shits','sh1t',
+  'cunt','cunts','cunting',
+  'bastard','bastards',
+  'cock','cocks','cockhead',
+  'dick','dicks','dickhead','dickheads',
+  'ass','arse','arsehole','asshole','assholes','arseholes','asses',
+  'bitch','bitches','bitching',
+  'piss','pissing','pisser',
+  'twat','twats',
+  'wanker','wankers','wank','wanking',
+  'bollocks','bollock',
+  'bellend','bell-end',
+  'prick','pricks',
+  'slut','sluts',
+  'whore','whores',
+  'nigger','niggers','nigga',
+  'faggot','faggots','fag',
+  'retard','retards','retarded',
+  'spastic','spaz',
+  'crap','craps','crapping',
+  'damn','damned',
+  'hell',
+  'bugger','buggers','buggering',
+  'knob','knobs','knobhead',
+  'tosser','tossers',
+  'minge',
+  'shag','shagging','shagged',
+  'bloody'
+];
+
+// Build one regex that matches any profane word (whole word, case-insensitive)
+const PROFANITY_RE = new RegExp(
+  '\\b(' + PROFANITY.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\b',
+  'gi'
+);
+
+function clean(text) {
+  if (!text) return text;
+  return String(text).replace(PROFANITY_RE, match => '*'.repeat(match.length));
+}
+
+function showToast(m,err){
+  const t=document.getElementById('toast');
+  t.textContent=m; t.className='toast'+(err?' err':'')+' show';
+  clearTimeout(t._t); t._t=setTimeout(()=>t.className='toast',3200);
+}
+function fmtD(d){ return new Date(d+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+function badge(r){
+  if(r==='Win') return '<span class="rb rw">⚔ Victory</span>';
+  if(r==='Loss') return '<span class="rb rl">✗ Defeat</span>';
+  return '<span class="rb rd">— Draw</span>';
+}
+function rankIco(i){
+  if(i===0) return '<span class="rnk g">⚜</span>';
+  if(i===1) return '<span class="rnk s">⚜</span>';
+  if(i===2) return '<span class="rnk b">⚜</span>';
+  return `<span class="rnk">${i+1}</span>`;
+}
+
+// Nav — handled below after roster functions
+
+// Stats bar
+function updateStats(){
+  const n=armies.length,w=armies.filter(a=>a.result==='Win').length,
+    l=armies.filter(a=>a.result==='Loss').length,d=armies.filter(a=>a.result==='Draw').length;
+  document.getElementById('st-tot').textContent=n;
+  document.getElementById('st-w').textContent=w;
+  document.getElementById('st-l').textContent=l;
+  document.getElementById('st-d').textContent=d;
+  document.getElementById('st-wr').textContent=n?Math.round(w/n*100)+'%':'0%';
+  document.getElementById('st-ap').textContent=n?Math.round(armies.reduce((s,a)=>s+a.points,0)/n).toLocaleString():'0';
+}
+
+// Faction filter
+function popFacFilter(){
+  const all=[...new Set(armies.map(a=>a.faction))].sort();
+  const sel=document.getElementById('ff-fac');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">All Factions</option>'+all.map(f=>`<option${f===cur?' selected':''}>${f}</option>`).join('');
+}
+
+// Chronicles
+function getList(){
+  const fac=document.getElementById('ff-fac').value;
+  const res=document.getElementById('ff-res').value;
+  const srch=document.getElementById('ff-srch').value.toLowerCase();
+  const srt=document.getElementById('ff-sort').value;
+  let list=armies.filter(a=>{
+    if(fac&&a.faction!==fac) return false;
+    if(res&&a.result!==res) return false;
+    if(srch&&!`${a.name} ${a.player} ${a.faction} ${a.notes||''}`.toLowerCase().includes(srch)) return false;
+    return true;
+  });
+  if(srt==='newest') list.sort((a,b)=>b.date.localeCompare(a.date));
+  else if(srt==='oldest') list.sort((a,b)=>a.date.localeCompare(b.date));
+  else if(srt==='ph') list.sort((a,b)=>b.points-a.points);
+  else if(srt==='pl') list.sort((a,b)=>a.points-b.points);
+  else if(srt==='likes') list.sort((a,b)=>b.likes-a.likes);
+  else if(srt==='wins') list.sort((a,b)=>(b.result==='Win'?1:0)-(a.result==='Win'?1:0));
+  return list;
+}
+
+function mkCard(a){
+  const fc=FCSS[a.faction]||'';
+  const isL=liked.has(a.id);
+  return `<div class="ac" id="ac-${a.id}">
+    <div class="ctop">
+      <div>
+        <div class="cft ${fc}" style="display:flex;align-items:center;gap:.35rem;">${factionIconEl(a.faction,20)}${a.faction}</div>
+        <div class="cnm">${clean(a.name)}</div>
+        <div class="cpl">by ${clean(a.player)}</div>
+      </div>
+      <div class="cpb">
+        <span class="cpv">${a.points.toLocaleString()}</span>
+        <span class="cpl2">battle pts</span>
+      </div>
+    </div>
+    <div class="crr">
+      ${badge(a.result)}
+      ${a.opponent?`<span style="font-size:.8rem;color:var(--text-muted)">${factionIconEl(a.opponent,18)} vs ${a.opponent}</span>`:''}
+      ${a.event?`<span class="cev">${clean(a.event)}</span>`:''}
+    </div>
+    ${a.notes?`<div class="cnts">${clean(a.notes)}</div>`:''}
+    ${(a.units&&a.units.length)?`<div style="margin-top:.55rem;padding-top:.55rem;border-top:1px solid rgba(201,168,76,.08);display:flex;flex-wrap:wrap;gap:.3rem;align-items:center"><span style="font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-right:.25rem">Your Roster:</span>${a.units.map(u=>`<span class="type-badge ${TYPE_CLASS[u.type]||'tb-core'}">${clean(u.name)}${u.models?' ×'+u.models:''}</span>`).join('')}</div>`:''}
+    ${(a.oppUnits&&a.oppUnits.length)?`<div style="margin-top:.4rem;display:flex;flex-wrap:wrap;gap:.3rem;align-items:center"><span style="font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-right:.25rem">Opp. Roster:</span>${a.oppUnits.map(u=>`<span class="type-badge ${TYPE_CLASS[u.type]||'tb-core'}" style="opacity:.75">${clean(u.name)}${u.models?' ×'+u.models:''}</span>`).join('')}</div>`:''}
+    <div class="cfoot">
+      <span class="cdt">${fmtD(a.date)}</span>
+      <div class="cact">
+        <button class="lbtn${isL?' liked':''}" data-id="${a.id}">♥ <span>${a.likes}</span></button>
+        <button class="dbtn" data-del="${a.id}">✕</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderCards(){
+  popFacFilter(); updateStats();
+  const list=getList();
+  const c=document.getElementById('cards');
+  if(!list.length){ c.innerHTML=`<div class="empty"><div class="eico">⚔</div><p>No armies match your filters.<br>The field of battle awaits your chronicles.</p></div>`; return; }
+  c.innerHTML=list.map(mkCard).join('');
+}
+
+document.getElementById('cards').addEventListener('click',function(e){
+  const lb=e.target.closest('.lbtn');
+  const db=e.target.closest('.dbtn');
+  if(lb){
+    const id=+lb.dataset.id;
+    const a=armies.find(x=>x.id===id); if(!a) return;
+    if(liked.has(id)){ liked.delete(id); a.likes=Math.max(0,a.likes-1); lb.classList.remove('liked'); }
+    else{ liked.add(id); a.likes++; lb.classList.add('liked'); }
+    lb.querySelector('span').textContent=a.likes;
+    saveArmy(a);
+  }
+  if(db){
+    const id=+db.dataset.del;
+    if(!confirm('Remove this army from the chronicle?')) return;
+    const army=armies.find(a=>a.id===id);
+    armies=armies.filter(a=>a.id!==id);
+    if(army) deleteArmy(army);
+    renderCards(); showToast('Record removed from the chronicle.');
+  }
+});
+
+['ff-fac','ff-res','ff-srch','ff-sort'].forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener('input',renderCards);
+  el.addEventListener('change',renderCards);
+});
+
+// Result buttons
+document.querySelectorAll('.resb').forEach(btn=>{
+  btn.addEventListener('click',function(){
+    selR=this.dataset.r;
+    document.querySelectorAll('.resb').forEach(b=>{ b.className='resb'; });
+    if(selR==='Win') this.classList.add('aw');
+    else if(selR==='Draw') this.classList.add('ad');
+    else this.classList.add('al');
+  });
+});
+
+// Submit
+document.getElementById('sub-btn').addEventListener('click',function(){
+  const pl=authUser||document.getElementById('s-pl').value.trim();
+  const fac=document.getElementById('s-fac').value;
+  const nm=document.getElementById('s-nm').value.trim();
+  const pts=parseInt(document.getElementById('s-pt').value)||0;
+  const op=pts||null;
+  if(!pl||!fac||!nm||!pts){ showToast('⚠ Fill in all required fields, Commander.',true); return; }
+  const army={
+    id:nextId++,player:pl,name:nm,faction:fac,points:pts,oppPoints:op,
+    result:selR||'Draw',opponent:document.getElementById('s-of').value,
+    event:document.getElementById('s-ev').value.trim(),
+    notes:document.getElementById('s-nt').value.trim(),
+    units:getUnits(),
+    oppUnits: oppImportedUnits.length ? oppImportedUnits.slice() : getOppUnits(),
+    date:new Date().toISOString().split('T')[0],likes:0
+  };
+  armies.unshift(army);
+  saveArmy(army);
+  selR=''; document.querySelectorAll('.resb').forEach(b=>b.className='resb');
+  ['s-nm','s-pt','s-ev','s-nt'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('s-fac').value=''; document.getElementById('s-of').value='';
+  clearUnits();
+  clearOppImport();
+  clearOppManual();
+  renderCards(); showToast('✦ Army recorded in the chronicle!');
+  document.querySelector('[data-page="chronicles"]').click();
+});
+
+document.getElementById('exp-btn').addEventListener('click',function(){
+  const blob=new Blob([JSON.stringify({armies,exported:new Date().toISOString()},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='wow-registry.json'; a.click();
+});
+
+document.getElementById('rst-btn').addEventListener('click',async function(){
+  if(!confirm('This will permanently delete ALL your records from the server. Are you sure?')) return;
+  // Delete all from server
+  showToast('Deleting records…');
+  await Promise.all(armies.map(a => deleteArmy(a)));
+  armies=[]; liked.clear(); nextId=1;
+  renderCards(); showToast('All records deleted.');
+});
+
+// Leaderboard
+function renderLB(){
+  // commanders
+  const cm={};
+  armies.forEach(a=>{
+    if(!cm[a.player]) cm[a.player]={player:a.player,w:0,l:0,d:0,n:0,fac:a.faction};
+    const c=cm[a.player];
+    if(a.result==='Win') c.w++; else if(a.result==='Loss') c.l++; else c.d++;
+    c.n++;
+  });
+  const cmds=Object.values(cm).sort((a,b)=>(b.w-a.w)||(b.n-a.n));
+  const cmdRows=cmds.map((c,i)=>{
+    const wr=Math.round(c.w/c.n*100);
+    return `<tr><td>${rankIco(i)}</td><td><strong>${clean(c.player)}</strong><br><span class="cft ${FCSS[c.fac]||''}" style="font-size:.58rem;display:inline-flex;align-items:center;gap:.25rem">${factionIconEl(c.fac,16)}${c.fac}</span></td>
+    <td style="text-align:center;color:#8fcc5a">${c.w}</td><td style="text-align:center;color:#d46060">${c.l}</td>
+    <td style="text-align:center;color:var(--aged)">${c.d}</td>
+    <td><div class="wrbar"><div class="wrbg"><div class="wrfill" style="width:${wr}%"></div></div><span style="font-size:.76rem;min-width:30px;text-align:right">${wr}%</span></div></td></tr>`;
+  }).join('');
+
+  // factions
+  const fm={};
+  armies.forEach(a=>{
+    if(!fm[a.faction]) fm[a.faction]={f:a.faction,w:0,l:0,d:0,n:0};
+    const x=fm[a.faction];
+    if(a.result==='Win') x.w++; else if(a.result==='Loss') x.l++; else x.d++;
+    x.n++;
+  });
+  const facs=Object.values(fm).sort((a,b)=>(b.w-a.w)||(b.n-a.n));
+  const facRows=facs.map((f,i)=>{
+    const wr=Math.round(f.w/f.n*100);
+    return `<tr><td>${rankIco(i)}</td><td><span class="cft ${FCSS[f.f]||''}" style="display:inline-flex;align-items:center;gap:.3rem">${factionIconEl(f.f,16)}${f.f}</span></td>
+    <td style="text-align:center;color:#8fcc5a">${f.w}</td><td style="text-align:center;color:#d46060">${f.l}</td>
+    <td style="text-align:center;color:var(--aged)">${f.d}</td>
+    <td><div class="wrbar"><div class="wrbg"><div class="wrfill" style="width:${wr}%"></div></div><span style="font-size:.76rem;min-width:30px;text-align:right">${wr}%</span></div></td></tr>`;
+  }).join('');
+
+  // top liked
+  const top=[...armies].sort((a,b)=>b.likes-a.likes).slice(0,8);
+  const topRows=top.map((a,i)=>
+    `<tr><td>${rankIco(i)}</td><td><strong>${clean(a.name)}</strong><br><span style="font-size:.76rem;font-style:italic;color:var(--text-muted)">${clean(a.player)}</span></td>
+    <td><span class="cft ${FCSS[a.faction]||''}" style="font-size:.58rem;display:inline-flex;align-items:center;gap:.25rem">${factionIconEl(a.faction,20)}${a.faction}</span></td>
+    <td style="text-align:center;color:var(--gold-light)">${a.points.toLocaleString()}</td>
+    <td style="text-align:center;color:#e06060">♥ ${a.likes}</td></tr>`
+  ).join('');
+
+  const empty='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:1.5rem;font-style:italic">No records yet</td></tr>';
+  document.getElementById('lb').innerHTML=`
+    <div class="panel"><div class="ptitle">⚜ Commander Rankings</div>
+      <table class="lbt"><thead><tr><th>#</th><th>Commander</th><th>W</th><th>L</th><th>D</th><th>Win Rate</th></tr></thead>
+      <tbody>${cmdRows||empty}</tbody></table></div>
+    <div class="panel"><div class="ptitle">⚔ Faction Rankings</div>
+      <table class="lbt"><thead><tr><th>#</th><th>Faction</th><th>W</th><th>L</th><th>D</th><th>Win Rate</th></tr></thead>
+      <tbody>${facRows||empty}</tbody></table></div>
+    <div class="panel" style="grid-column:1/-1"><div class="ptitle">♥ Most Acclaimed Armies</div>
+      <table class="lbt"><thead><tr><th>#</th><th>Army</th><th>Faction</th><th>Points</th><th>Acclaim</th></tr></thead>
+      <tbody>${topRows||'<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:1.5rem;font-style:italic">No records yet</td></tr>'}</tbody></table></div>`;
+}
+
+// Charts
+const CD={
+  plugins:{legend:{labels:{color:'#c4a96b',font:{family:"'Cinzel',serif",size:11}}}},
+  scales:{x:{ticks:{color:'#8a6a2a',font:{size:10}},grid:{color:'rgba(201,168,76,.08)'}},y:{ticks:{color:'#8a6a2a',font:{size:10}},grid:{color:'rgba(201,168,76,.1)'}}}
+};
+function killChart(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
+
+function renderCharts(){
+  document.getElementById('cgrd').innerHTML=`
+    <div class="chp"><div class="cht">Armies by Faction</div><canvas id="ch1"></canvas></div>
+    <div class="chp"><div class="cht">Win / Draw / Loss</div><canvas id="ch2"></canvas></div>
+    <div class="chp wide"><div class="cht">Win Rate by Faction (%)</div><div style="height:220px"><canvas id="ch3" style="max-height:220px"></canvas></div></div>
+    <div class="chp wide"><div class="cht">Points Distribution</div><div style="height:200px"><canvas id="ch4" style="max-height:200px"></canvas></div></div>`;
+
+  // Faction count bar
+  const fc={};
+  armies.forEach(a=>fc[a.faction]=(fc[a.faction]||0)+1);
+  const fl=Object.keys(fc).sort((a,b)=>fc[b]-fc[a]);
+  killChart('c1');
+  charts['c1']=new Chart(document.getElementById('ch1'),{type:'bar',
+    data:{labels:fl,datasets:[{label:'Armies',data:fl.map(f=>fc[f]),
+      backgroundColor:fl.map(f=>(FHEX[f]||'#c9a84c')+'bb'),
+      borderColor:fl.map(f=>FHEX[f]||'#c9a84c'),borderWidth:1}]},
+    options:{...CD,plugins:{...CD.plugins,legend:{display:false}},responsive:true,maintainAspectRatio:true}});
+
+  // WDL doughnut
+  const w=armies.filter(a=>a.result==='Win').length,d=armies.filter(a=>a.result==='Draw').length,l=armies.filter(a=>a.result==='Loss').length;
+  killChart('c2');
+  charts['c2']=new Chart(document.getElementById('ch2'),{type:'doughnut',
+    data:{labels:['Victory','Draw','Defeat'],datasets:[{data:[w,d,l],
+      backgroundColor:['rgba(90,160,60,.75)','rgba(180,150,60,.75)','rgba(160,50,50,.75)'],
+      borderColor:['#5aa030','#b49630','#a03030'],borderWidth:1}]},
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:'#c4a96b',font:{family:"'Cinzel',serif",size:11}}}}}});
+
+  // Win rate by faction
+  const fwr={};
+  armies.forEach(a=>{ if(!fwr[a.faction]) fwr[a.faction]={w:0,n:0}; if(a.result==='Win') fwr[a.faction].w++; fwr[a.faction].n++; });
+  const wfl=Object.keys(fwr).sort((a,b)=>fwr[b].w/fwr[b].n-fwr[a].w/fwr[a].n);
+  killChart('c3');
+  charts['c3']=new Chart(document.getElementById('ch3'),{type:'bar',
+    data:{labels:wfl,datasets:[{label:'Win Rate %',data:wfl.map(f=>Math.round(fwr[f].w/fwr[f].n*100)),
+      backgroundColor:wfl.map(f=>(FHEX[f]||'#c9a84c')+'bb'),
+      borderColor:wfl.map(f=>FHEX[f]||'#c9a84c'),borderWidth:1}]},
+    options:{...CD,plugins:{...CD.plugins,legend:{display:false}},responsive:true,maintainAspectRatio:false,
+      scales:{...CD.scales,y:{...CD.scales.y,max:100,ticks:{...CD.scales.y.ticks,callback:v=>v+'%'}}}}});
+
+  // Points histogram
+  const bk={'<1000':0,'1000–1499':0,'1500–1999':0,'2000–2499':0,'2500–2999':0,'3000+':0};
+  armies.forEach(a=>{ const p=a.points; if(p<1000) bk['<1000']++; else if(p<1500) bk['1000–1499']++; else if(p<2000) bk['1500–1999']++; else if(p<2500) bk['2000–2499']++; else if(p<3000) bk['2500–2999']++; else bk['3000+']++; });
+  killChart('c4');
+  charts['c4']=new Chart(document.getElementById('ch4'),{type:'bar',
+    data:{labels:Object.keys(bk),datasets:[{label:'Armies',data:Object.values(bk),backgroundColor:'rgba(201,168,76,.45)',borderColor:'#c9a84c',borderWidth:1}]},
+    options:{...CD,plugins:{...CD.plugins,legend:{display:false}},responsive:true,maintainAspectRatio:false}});
+}
+
+// ── FACTION UNIT LISTS ──
+const FACTION_UNITS={
+  "Empire of Man":{
+    Character:["General of the Empire","Grand Master","Lector of Sigmar","High Priest of Ulric","Captain of the Empire","Wizard Lord","Master Mage","Chapter Master","Witch Hunter","Priest of Sigmar","Priest of Ulric","Empire Engineer"],
+    Core:["State Troops","Veteran State Troops","State Missile Troops","Free Company Militia","Empire Archers","Empire Knights"],
+    Special:["Empire Greatswords","Pistoliers","Outriders","Demigryph Knights","Inner Circle Knights","Teutogen Guard","Empire Road Wardens","Great Cannon","Mortar"],
+    Rare:["Flagellants","Helblaster Volley Gun","Helstorm Rocket Battery","Steam Tank","War Wagon"]
+  },
+  "Kingdom of Bretonnia":{
+    Character:["Duke","Baron","Prophetess","Paladin","Damsel","Sergeant-at-Arms"],
+    Core:["Knights of the Realm on Foot","Mounted Knights of the Realm","Knights Errant","Men-at-Arms","Peasant Bowmen"],
+    Special:["Squires","Questing Knights","Pegasus Knights","Mounted Yeomen","Battle Pilgrims"],
+    Rare:["Grail Knights","Field Trebuchet"]
+  },
+  "Dwarfen Mountain Holds":{
+    Character:["King","Runelord","Anvil of Doom","Thane","Runesmith","Daemon Slayer","Dragon Slayer","Dwarf Engineer"],
+    Core:["Dwarf Warriors","Quarrellers","Thunderers","Rangers"],
+    Special:["Longbeards","Ironbreakers","Miners","Slayers","Hammerers","Gyrocopter","Bolt Thrower","Grudge Thrower","Cannon"],
+    Rare:["Rangers","Irondrakes","Gyrobomber","Organ Gun","Flame Cannon","Dwarf Cart"]
+  },
+  "High Elf Realms":{
+    Character:["High Elf Prince","Archmage","Dragon Mage","Handmaiden of the Everqueen","High Elf Noble","Mage","Storm Weaver"],
+    Core:["Elven Spearmen","Elven Archers","Lothern Sea Guard","Ellyrian Reavers","Silver Helms","Sisters of Avelorn"],
+    Special:["White Lions of Chrace","Swordmasters of Hoeth","Phoenix Guard","Shadow Warriors","Tiranoc Chariot","Dragon Princes of Caledor","Lion Chariot of Chrace","Lothern Skycutter"],
+    Rare:["Sisters of Avelorn","Lion Chariots of Chrace","Lothern Skycutters","Flamespyre Phoenix","Frostheart Phoenix","Great Eagle","Eagle-Claw Bolt Thrower","War Lions","Merwyrm"]
+  },
+  "Wood Elf Realms":{
+    Character:["Glade Lord","Spellweaver","Glade Captain","Spellsinger","Waystalker","Branchwraith","Treeman Ancient"],
+    Core:["Glade Guard","Dryads","Eternal Guard","Glade Riders","Wild Riders"],
+    Special:["Wardancers","Waywatchers","Deepwood Scouts","Treekin","Warhawk Riders","Great Eagle","Sisters of the Thorn"],
+    Rare:["Treeman","Forest Dragon"]
+  },
+  "Dark Elves":{
+    Character:["Dark Elf Dreadlord","Supreme Sorceress","Dark Elf Master","Sorceress","High Beastmaster","Death Hag","Khainite Assassin"],
+    Core:["Dark Elf Warriors","Repeater Crossbowmen","Black Ark Corsairs","Dark Riders","Witch Elves"],
+    Special:["Har Ganeth Executioners","Witch Elves","Dark Elf Shades","Harpies","Black Guard of Naggarond","Cold One Knights","Scourgerunner Chariot","Cold One Chariot","War Hydra","Kharibdyss"],
+    Rare:["Sisters of Slaughter","Bloodwrack Shrine","War Hydra","Kharibdyss","Bloodwrack Medusa","Doomfire Warlocks","Reaper Bolt Thrower"]
+  },
+  "Orc & Goblin Tribes":{
+    Character:["Black Orc Warboss","Orc Warboss","Orc Weirdnob","Black Orc Bigboss","Orc Bigboss","Orc Weirdboy","Goblin Warboss","Goblin Bigboss","Goblin Oddnob","Goblin Oddgit","Night Goblin Warboss","Night Goblin Bigboss","Night Goblin Oddnob","Night Goblin Oddgit"],
+    Core:["Orc Mob","Goblin Mob","Snotling Mob","Goblin Spider Rider Mob","Goblin Wolf Rider Mob","Night Goblin Mob","Night Goblin Squig Herd","Black Orc Mob"],
+    Special:["Black Orc Mob","Common Troll Mob","River Troll Mob","Stone Troll Mob","Orc Boar Boy Mob","Orc Boar Chariot","Goblin Wolf Chariot","Snotling Pump Wagon","Night Goblin Squig Hopper Mob","Goblin Bolt Throwa"],
+    Rare:["Arachnarok Spider","Giant","Mangler Squig","Goblin Rock Lobber","Doom Diver Catapult","Troll Hag"]
+  },
+  "Warriors of Chaos":{
+    Character:["Chaos Lord","Daemon Prince","Exalted Champion","Sorcerer Lord","Aspiring Champion","Exalted Sorcerer"],
+    Core:["Chaos Warriors","Chaos Marauders","Forsaken","Chaos Knights","Marauder Horsemen","Chaos Warhounds"],
+    Special:["Chosen Chaos Warriors","Chosen Chaos Knights","Chaos Ogres","Chaos Trolls","Chaos Spawn","Chaos Chariot","Chimera","Dragon Ogres"],
+    Rare:["Gorebeast Chariot","Hellcannon","Dragon Ogre Shaggoth","Chaos Giant","Gigantic Spawn of Chaos","Warpfire Dragon"]
+  },
+  "Beastmen Brayherds":{
+    Character:["Beastlord","Great Bray-Shaman","Doombull","Wargor","Bray-Shaman","Gorebull","Centigor Chieftain"],
+    Core:["Gor Herd","Ungor Herd","Ungor Raiders","Chaos Warhounds","Tuskgor Chariot"],
+    Special:["Bestigor Herd","Harpies","Minotaur Herd","Centigor Herd","Dragon Ogres","Razorgor Chariot","Cockatrice","Jabberslythe","Cygor"],
+    Rare:["Ghorgon","Jabberslythe","Cygor","Razorgor Herd"]
+  },
+  "Tomb Kings of Khemri":{
+    Character:["Tomb King","Tomb Prince","High Priest","Mortuary Priest","Royal Herald","Necrotect"],
+    Core:["Skeleton Warriors","Skeleton Archers","Skeleton Skirmishers","Tomb Swarms","Skeleton Horsemen","Skeleton Horse Archers","Skeleton Chariots","Tomb Guard","Sepulchral Stalkers"],
+    Special:["Tomb Guard","Ushabti","Sepulchral Stalkers","Carrion","Necropolis Knights","Tomb Scorpion","Khemrian Warsphinx"],
+    Rare:["Necrolith Colossus","Necrosphinx","Screaming Skull Catapult","Casket of Souls","Winged Warsphinx"]
+  },
+  "Vampire Counts":{
+    Character:["Vampire Count","Vampire Thrall","Master Necromancer","Necromancer","Wight King","Banshee","Cairn Wraith"],
+    Core:["Skeleton Warriors","Zombie Mob","Crypt Ghouls","Dire Wolves","Bat Swarms","Spirit Hosts"],
+    Special:["Grave Guard","Black Knights","Cairn Wraiths","Hexwraiths","Crypt Horrors","Fell Bats","Vargheists","Black Coach","Corpse Cart","Mortis Engine"],
+    Rare:["Terrorgheist","Zombie Dragon","Blood Knights","Varghulf","Abyssal Terror"]
+  },
+  "Daemons of Chaos":{
+    Character:["Daemon Prince","Herald of Khorne","Herald of Tzeentch","Herald of Nurgle","Herald of Slaanesh"],
+    Core:["Bloodletters","Flesh Hounds","Plaguebearers","Nurglings","Daemonettes","Seekers","Pink Horrors","Blue Horrors","Brimstone Horrors"],
+    Special:["Bloodcrushers","Beasts of Nurgle","Plague Drones","Fiends","Hellflayers","Seeker Chariots","Flamers","Screamers","Burning Chariots","Soul Grinders"],
+    Rare:["Bloodthirster","Lord of Change","Great Unclean One","Keeper of Secrets","Skull Cannon","Soul Grinder"]
+  },
+  "Skaven":{
+    Character:["Grey Seer","Vermin Lord","Skaven Warlord","Skaven Chieftain","Clan Skryre Warlock Engineer","Clan Eshin Master Assassin","Clan Pestilens Plague Priest"],
+    Core:["Clanrat Warriors","Skaven Slaves","Giant Rats","Rat Swarms","Night Runners"],
+    Special:["Stormvermin","Plague Monks","Gutter Runners","Rat Ogres","Poisoned Wind Globadiers","Jezzails","Plagueclaw Catapult","Warp Lightning Cannon","Doom-Flayer","Warp-Grinder","Ratling Gun","Warpfire Thrower"],
+    Rare:["Hellpit Abomination","Doomwheel","Screaming Bell","Plague Furnace","Warp Lightning Cannon","Plagueclaw Catapult"]
+  },
+  "Lizardmen":{
+    Character:["Slann Mage-Priest","Saurus Oldblood","Saurus Scar-Veteran","Skink Chief","Skink Priest"],
+    Core:["Saurus Warriors","Skink Skirmishers","Skink Cohort","Saurus Cavalry"],
+    Special:["Temple Guard","Chameleon Skinks","Terradon Riders","Ripperdactyl Riders","Kroxigor","Stegadon","Salamander Hunting Pack","Razordon Hunting Pack"],
+    Rare:["Ancient Stegadon","Engine of the Gods","Bastiladon","Carnosaur","Troglodon"]
+  },
+  "Ogre Kingdoms":{
+    Character:["Tyrant","Slaughtermaster","Butcher","Hunter","Bruiser","Firebelly"],
+    Core:["Ogre Bulls","Ironguts","Gnoblars","Gnoblar Trappers"],
+    Special:["Leadbelchers","Mournfang Cavalry","Ironblaster","Scraplauncher","Yhetees","Gorgers","Sabretusks"],
+    Rare:["Maneaters","Stonehorn","Thundertusk"]
+  },
+  "Chaos Dwarfs":{
+    Character:["Sorcerer-Prophet","Infernal Castellan","Daemonsmith Sorcerer","Bull Centaur Taur'ruk","Infernal Seneschal","Hobgoblin Khan"],
+    Core:["Infernal Guard","Hobgoblin Cutthroats","Hobgoblin Wolf Raiders"],
+    Special:["Bull Centaur Renders","K'daai Fireborn","Deathshrieker Rocket Launcher","Magma Cannon","Iron Daemon War Engine"],
+    Rare:["K'daai Destroyer","Dreadquake Mortar","Skullcracker War Engine","Bale Taurus","Great Taurus","Lammasu"]
+  },
+  "Grand Cathay":{
+    Character:["Cathayan Dragon","Shugengan Lord","Lord Magistrate","Shugengan","Gate Master","Gate Keeper","Strategist"],
+    Core:["Jade Warriors","Jade Lancers"],
+    Special:["Jade Lancers","Fire Rain Rocket Battery","Cathayan Grand Cannon","Cathayan Sentinel","Sky Lantern"],
+    Rare:["Sky Lantern","Cathayan Sentinel"]
+  },
+  "Dogs of War":{
+    Character:["General","Paymaster","Hireling Wizard Lord","Mercenary Captain"],
+    Core:["Pikemen","Crossbowmen","Duellists","Heavy Cavalry","Light Cavalry"],
+    Special:["Ogre Mercenaries","Halfling Hot Pot","Galloper Guns"],
+    Rare:["Prince Ulther's Dragon Company"]
+  },
+  "Regiments of Renown":{
+    Character:["Mercenary General","Hireling Wizard"],
+    Core:["Mercenary Infantry","Mercenary Cavalry","Mercenary Crossbowmen"],
+    Special:["Ogre Bodyguard","Dwarf Allies","Halfling Scouts"],
+    Rare:["Elite Regiment"]
+  },
+  "Realms of Men":{
+    Character:["Chieftain","Shaman","Champion"],
+    Core:["Tribal Warriors","Skirmishers","Horsemen"],
+    Special:["Elite Warriors","War Chariots","Beast Handlers"],
+    Rare:["Chaos Spawn","Warbeast"]
+  },
+  "Kislev":{
+    Character:["Tzar","Ice Queen","Boyar","Frost Maiden","Kossar Captain"],
+    Core:["Kossars","Streltsi","Horse Archers","Winged Lancers"],
+    Special:["Gryphon Legion","Ice Guard","War Bear Riders","Elemental Bear"],
+    Rare:["Great Elemental Bear","Frost Wyrm"]
+  }
+};
+
+function getFactionUnits(faction,type){ return (FACTION_UNITS[faction]||{})[type]||[]; }
+
+function buildNameEl(faction,type,currentName){
+  const units=getFactionUnits(faction,type);
+  if(!units.length){
+    return `<input class="uc-name-inp" type="text" placeholder="Unit name…" value="${currentName||''}">`;
+  }
+  const inList=units.includes(currentName);
+  const customSel=(!inList&&currentName)?' selected':'';
+  return `<select class="uc-name-inp uc-name-sel">
+    <option value=""${!currentName&&!customSel?' selected':''}>Select unit…</option>
+    ${units.map(u=>`<option${u===currentName?' selected':''}>${u}</option>`).join('')}
+    <option value="__custom"${customSel}>Other…</option>
+  </select>
+  ${(!inList&&currentName)?`<input class="uc-name-custom" type="text" placeholder="Unit name…" value="${currentName}" style="margin-top:.3rem;width:100%">` : ''}`;
+}
+
+function wireNameEl(container,card){
+  const sel=container.querySelector('.uc-name-sel');
+  if(!sel) return;
+  sel.addEventListener('change',function(){
+    const customInp=container.querySelector('.uc-name-custom');
+    if(this.value==='__custom'){
+      if(!customInp){
+        const inp=document.createElement('input');
+        inp.type='text'; inp.className='uc-name-custom';
+        inp.placeholder='Unit name…';
+        inp.style.cssText='margin-top:.3rem;width:100%';
+        container.appendChild(inp); inp.focus();
+      }
+    } else {
+      if(customInp) customInp.remove();
+    }
+  });
+}
+
+// Get the effective name from a head element (select + optional custom input)
+function getUnitName(head){
+  const sel=head.querySelector('.uc-name-sel');
+  if(sel){
+    if(sel.value==='__custom'){
+      return head.querySelector('.uc-name-custom')?.value.trim()||'';
+    }
+    return sel.value||'';
+  }
+  return head.querySelector('.uc-name-inp')?.value.trim()||'';
+}
+
+function refreshUnitNameInputs(){
+  const faction=document.getElementById('s-fac').value;
+  document.querySelectorAll('#unit-cards .uc').forEach(card=>{
+    const type=card.querySelector('.uc-type-sel')?.value||'Core';
+    const head=card.querySelector('.uc-head');
+    if(!head) return;
+    const currentName=getUnitName(head);
+    head.querySelectorAll('.uc-name-inp,.uc-name-sel,.uc-name-custom').forEach(el=>el.remove());
+    const tmp=document.createElement('div');
+    tmp.innerHTML=buildNameEl(faction,type,currentName);
+    const ptsDisp=head.querySelector('.uc-pts-display');
+    [...tmp.children].forEach(el=>head.insertBefore(el,ptsDisp));
+    wireNameEl(head,card);
+  });
+}
+
+document.getElementById('s-fac').addEventListener('change',refreshUnitNameInputs);
+
+// ── RICH UNIT COMPOSITION BUILDER ──
+const UNIT_TYPES=['Character','Core','Special','Rare'];
+const TYPE_CLASS={Character:'tb-lord',Core:'tb-core',Special:'tb-special',Rare:'tb-rare'};
+const TYPE_COLOR={Character:'var(--gold)',Core:'#7ab840',Special:'#a06ad4',Rare:'#d46060'};
+let ucCount=0;
+
+function mkUnitCard(u={}){
+  const id='uc-'+ucCount++;
+  const type=u.type||'Core';
+  const tc=TYPE_CLASS[type]||'tb-core';
+  const upgHtml=(u.upgrades||[]).map((up,i)=>mkUpgradeRow(id,up,i)).join('');
+  const card=document.createElement('div');
+  card.className='uc'; card.id=id; card.dataset.open='1';
+  const faction=document.getElementById('s-fac').value;
+  const nameHtml=buildNameEl(faction,type,u.name||'');
+  card.innerHTML=`
+    <div class="uc-head">
+      <span class="uc-drag" title="Drag to reorder">⠿</span>
+      <select class="uc-type-sel ${tc}">
+        ${UNIT_TYPES.map(t=>`<option${t===type?' selected':''}>${t}</option>`).join('')}
+      </select>
+      ${nameHtml}
+      <span class="uc-pts-display" data-id="${id}">0 pts</span>
+      <button type="button" class="uc-toggle open" title="Collapse">▲</button>
+      <button type="button" class="uc-del" title="Remove unit">✕</button>
+    </div>
+    <div class="uc-body open">
+      <div class="uc-row uc-row-4">
+        <div class="uc-field">
+          <label>Models</label>
+          <input type="number" class="u-models" min="1" placeholder="e.g. 20" value="${u.models||''}">
+        </div>
+        <div class="uc-field">
+          <label>Pts / Model</label>
+          <input type="number" class="u-ppm" min="0" placeholder="e.g. 7" value="${u.ppm||''}">
+        </div>
+        <div class="uc-field">
+          <label>Base Pts</label>
+          <input type="number" class="u-base" min="0" placeholder="e.g. 0" value="${u.base||''}">
+        </div>
+        <div class="uc-field">
+          <label>Total Pts</label>
+          <input type="number" class="u-total" min="0" placeholder="auto" value="${u.total||''}">
+        </div>
+      </div>
+      <div class="uc-calc" id="${id}-calc">Enter models × pts/model, or set total directly.</div>
+      <div class="uc-row uc-row-2" style="margin-top:.5rem">
+        <div class="uc-field">
+          <label>Magic Items</label>
+          <input type="text" class="u-magic" placeholder="e.g. Sword of Might, Shield of…" value="${u.magic||''}">
+        </div>
+        <div class="uc-field">
+          <label>Special Rules / Keywords</label>
+          <input type="text" class="u-rules" placeholder="e.g. Stubborn, Immune to Psych" value="${u.rules||''}">
+        </div>
+      </div>
+      <div class="upgrades-area">
+        <div class="upgrades-lbl">
+          Upgrades &amp; Options
+          <button type="button" class="add-upgrade-btn" data-card="${id}">+ Add option</button>
+        </div>
+        <div class="upgrades-list" id="${id}-upgs">${upgHtml}</div>
+      </div>
+      <div class="uc-field" style="margin-top:.5rem">
+        <label>Notes</label>
+        <textarea class="u-notes" rows="2" placeholder="Command group, movement tray, colour scheme…">${u.notes||''}</textarea>
+      </div>
+    </div>`;
+
+  // type select changes badge colour and refreshes unit name dropdown
+  const typeSel=card.querySelector('.uc-type-sel');
+  typeSel.addEventListener('change',function(){
+    this.className='uc-type-sel '+(TYPE_CLASS[this.value]||'tb-core');
+    // Refresh name dropdown for new type
+    const faction=document.getElementById('s-fac').value;
+    const head=card.querySelector('.uc-head');
+    const currentName=getUnitName(head);
+    head.querySelectorAll('.uc-name-inp,.uc-name-custom').forEach(el=>el.remove());
+    const tmp=document.createElement('div');
+    tmp.innerHTML=buildNameEl(faction,this.value,currentName);
+    const ptsDisp=head.querySelector('.uc-pts-display');
+    [...tmp.children].forEach(el=>head.insertBefore(el,ptsDisp));
+    wireNameEl(head,card);
+    recalcUnit(card);
+  });
+  // toggle open/close
+  card.querySelector('.uc-toggle').addEventListener('click',function(){
+    const body=card.querySelector('.uc-body');
+    const isOpen=body.classList.toggle('open');
+    this.classList.toggle('open',isOpen);
+    card.dataset.open=isOpen?'1':'0';
+  });
+  // delete
+  card.querySelector('.uc-del').addEventListener('click',()=>{ card.remove(); updateBudget(); });
+  // add upgrade
+  card.querySelector('.add-upgrade-btn').addEventListener('click',()=>{
+    const list=card.querySelector('.upgrades-list');
+    list.insertAdjacentHTML('beforeend',mkUpgradeRow(id,{},list.children.length));
+    bindUpgradeRow(list.lastElementChild, card);
+    recalcUnit(card);
+  });
+  // live recalc
+  card.querySelectorAll('.u-models,.u-ppm,.u-base,.u-total').forEach(inp=>{
+    inp.addEventListener('input',()=>recalcUnit(card));
+  });
+  // bind existing upgrade rows
+  card.querySelectorAll('.upgrade-row').forEach(row=>bindUpgradeRow(row,card));
+
+  document.getElementById('unit-cards').appendChild(card);
+  wireNameEl(card.querySelector('.uc-head'), card);
+  recalcUnit(card);
+  updateBudget();
+  return card;
+}
+
+function mkUpgradeRow(cardId, up={}, idx){
+  return `<div class="upgrade-row">
+    <input type="text" class="upg-name" placeholder="e.g. Full command, Shield…" value="${up.name||''}">
+    <input type="number" class="upg-pts" min="0" placeholder="pts" value="${up.pts||''}">
+    <button type="button" class="del-upg" title="Remove">✕</button>
+  </div>`;
+}
+
+function bindUpgradeRow(row, card, recalcFn){
+  const fn = recalcFn || recalcUnit;
+  row.querySelector('.del-upg').addEventListener('click',()=>{ row.remove(); fn(card); });
+  row.querySelector('.upg-pts').addEventListener('input',()=>fn(card));
+}
+
+function recalcUnit(card){
+  const modelsEl=card.querySelector('.u-models');
+  const ppmEl=card.querySelector('.u-ppm');
+  const baseEl=card.querySelector('.u-base');
+  const totalEl=card.querySelector('.u-total');
+  const calcEl=card.querySelector('[id$="-calc"]');
+
+  const models=parseInt(modelsEl.value)||0;
+  const ppm=parseFloat(ppmEl.value)||0;
+  const base=parseInt(baseEl.value)||0;
+  const upgPts=[...card.querySelectorAll('.upg-pts')].reduce((s,i)=>s+(parseInt(i.value)||0),0);
+
+  let total=parseInt(totalEl.value)||0;
+  // if models & ppm filled, auto-set total
+  if(models>0&&ppm>0){
+    total=Math.round(models*ppm)+base+upgPts;
+    totalEl.value=total;
+    calcEl.textContent=`${models} × ${ppm} + ${base} base + ${upgPts} upgrades = ${total} pts`;
+  } else if(total>0){
+    calcEl.textContent=`Manual total: ${total} pts${upgPts?' (+ '+upgPts+' upgrades not included)':''}`;
+    total+=upgPts;
+  } else {
+    calcEl.textContent='Enter models × pts/model, or set total directly.';
+    total=upgPts;
+  }
+
+  const disp=card.querySelector('.uc-pts-display');
+  if(disp) disp.textContent=total+' pts';
+  updateBudget();
+}
+
+function updateBudget(){
+  const maxPts=parseInt(document.getElementById('s-pt').value)||0;
+  let used=0;
+  document.querySelectorAll('#unit-cards .uc').forEach(card=>{
+    const disp=card.querySelector('.uc-pts-display');
+    used+=parseInt(disp?.textContent)||0;
+  });
+  document.getElementById('comp-used').textContent=used.toLocaleString();
+  document.getElementById('comp-max').textContent=maxPts?maxPts.toLocaleString():'—';
+  const bar=document.getElementById('comp-bar');
+  const usedEl=document.getElementById('comp-used');
+  const pct=maxPts?Math.min(used/maxPts*100,100):0;
+  const over=maxPts&&used>maxPts;
+  bar.style.width=pct+'%';
+  bar.classList.toggle('over',over);
+  usedEl.classList.toggle('comp-budget-over',over);
+}
+
+// wire up army points field to update budget display
+document.getElementById('s-pt').addEventListener('change', updateBudget);
+
+// type-section quick-add buttons
+document.querySelectorAll('.type-section-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    mkUnitCard({type:btn.dataset.add});
+    // open the new card's body
+  });
+});
+
+function getUnits(){
+  const units=[];
+  document.querySelectorAll('#unit-cards .uc').forEach(card=>{
+    const name=getUnitName(card.querySelector('.uc-head'));
+    const type=card.querySelector('.uc-type-sel')?.value||'Core';
+    const models=parseInt(card.querySelector('.u-models')?.value)||null;
+    const ppm=parseFloat(card.querySelector('.u-ppm')?.value)||null;
+    const base=parseInt(card.querySelector('.u-base')?.value)||0;
+    const total=parseInt(card.querySelector('.uc-pts-display')?.textContent)||0;
+    const magic=card.querySelector('.u-magic')?.value?.trim()||'';
+    const rules=card.querySelector('.u-rules')?.value?.trim()||'';
+    const notes=card.querySelector('.u-notes')?.value?.trim()||'';
+    const upgrades=[...card.querySelectorAll('.upgrade-row')].map(r=>({
+      name:r.querySelector('.upg-name')?.value?.trim()||'',
+      pts:parseInt(r.querySelector('.upg-pts')?.value)||0
+    })).filter(u=>u.name||u.total);
+    if(name||total) units.push({name,type,models,ppm,base,total,magic,rules,notes,upgrades});
+  });
+  return units;
+}
+
+function clearUnits(){
+  document.getElementById('unit-cards').innerHTML='';
+  ucCount=0;
+  updateBudget();
+}
+
+// ── COMPOSITION DISPLAY (roster cards + chronicle inline) ──
+function mkCompBlock(units, title='Army Composition'){
+  if(!units||!units.length) return '';
+  const totalPts=units.reduce((s,u)=>s+(u.total||0),0);
+  const order=['Character','Core','Special','Rare'];
+  const grouped={};
+  units.forEach(u=>{ if(!grouped[u.type]) grouped[u.type]=[]; grouped[u.type].push(u); });
+  let rows='';
+  order.forEach(t=>{
+    if(!grouped[t]) return;
+    grouped[t].forEach(u=>{
+      const tc=TYPE_CLASS[t]||'tb-core';
+      const upgStr=u.upgrades&&u.upgrades.length ? u.upgrades.filter(x=>x.name).map(x=>clean(x.name)+(x.pts?` (+${x.pts})`:'') ).join(', ') : '';
+      const magicStr=u.magic ? clean(u.magic) : '';
+      rows+=`<tr>
+        <td><span class="type-badge ${tc}">${t}</span></td>
+        <td>
+          <div>${clean(u.name)}</div>
+          ${upgStr?`<div class="comp-upgs">${upgStr}</div>`:''}
+          ${magicStr?`<div class="comp-magic">✦ ${magicStr}</div>`:''}
+          ${u.rules?`<div class="comp-upgs" style="color:var(--aged)">${clean(u.rules)}</div>`:''}
+          ${u.notes?`<div class="comp-upgs" style="font-style:italic">${clean(u.notes)}</div>`:''}
+        </td>
+        <td class="td-models">${u.models||'—'}</td>
+        <td class="td-pts">${u.ppm?`<div style="font-size:.7rem;color:var(--text-muted)">${u.ppm} ppm</div>`:''}${(u.total||0).toLocaleString()}</td>
+      </tr>`;
+    });
+  });
+  return `<div class="comp-section">
+    <div class="comp-header">
+      <span class="comp-title">${title}</span>
+      <span class="comp-total">${units.length} unit${units.length!==1?'s':''} · ${totalPts.toLocaleString()} pts</span>
+    </div>
+    <table class="comp-table">
+      <thead><tr><th>Type</th><th>Unit</th><th style="text-align:center">Models</th><th style="text-align:right">Pts</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+// ── ROSTERS PAGE ──
+function popRosterFacFilter(){
+  const all=[...new Set(armies.map(a=>a.faction))].sort();
+  const sel=document.getElementById('rf-fac');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">All Factions</option>'+all.map(f=>`<option${f===cur?' selected':''}>${f}</option>`).join('');
+}
+
+function getRosterList(){
+  const fac=document.getElementById('rf-fac').value;
+  const srch=document.getElementById('rf-srch').value.toLowerCase();
+  const srt=document.getElementById('rf-sort').value;
+  let list=armies.filter(a=>{
+    if((!a.units||!a.units.length) && (!a.oppUnits||!a.oppUnits.length)) return false;
+    if(fac&&a.faction!==fac) return false;
+    const unitNames=(a.units||[]).map(u=>u.name).join(' ');
+    const oppUnitNames=(a.oppUnits||[]).map(u=>u.name).join(' ');
+    if(srch&&!`${a.name} ${a.player} ${a.faction} ${a.opponent||''} ${unitNames} ${oppUnitNames}`.toLowerCase().includes(srch)) return false;
+    return true;
+  });
+  if(srt==='newest') list.sort((a,b)=>b.date.localeCompare(a.date));
+  else if(srt==='ph') list.sort((a,b)=>b.points-a.points);
+  else if(srt==='most-units') list.sort((a,b)=>(b.units||[]).length-(a.units||[]).length);
+  else if(srt==='wins') list.sort((a,b)=>(b.result==='Win'?1:0)-(a.result==='Win'?1:0));
+  return list;
+}
+
+function mkRosterCard(a){
+  const fc=FCSS[a.faction]||'';
+  const totalUnitPts=(a.units||[]).reduce((s,u)=>s+(u.total||0),0);
+  const ptsDiff=a.points-totalUnitPts;
+  const ptsDiffStr=ptsDiff!==0?`<span style="font-size:.72rem;color:${ptsDiff>0?'var(--text-muted)':'#d46060'};margin-left:.5rem">${ptsDiff>0?'+':''}${ptsDiff.toLocaleString()} unassigned</span>`:'';
+  const typeCount={Character:0,Core:0,Special:0,Rare:0};
+  (a.units||[]).forEach(u=>{ if(typeCount[u.type]!==undefined) typeCount[u.type]++; });
+  const typePills=Object.entries(typeCount).filter(([,n])=>n>0).map(([t,n])=>`<span class="type-badge ${TYPE_CLASS[t]||'tb-core'}" style="margin-right:.3rem">${t} ×${n}</span>`).join('');
+
+  const hasOppComp = a.oppUnits && a.oppUnits.length > 0;
+  const oppFc = FCSS[a.opponent]||'';
+  const oppTotalPts = hasOppComp ? (a.oppUnits||[]).reduce((s,u)=>s+(u.total||0),0) : 0;
+  const oppTypeCount={Character:0,Core:0,Special:0,Rare:0};
+  if(hasOppComp)(a.oppUnits||[]).forEach(u=>{ if(oppTypeCount[u.type]!==undefined) oppTypeCount[u.type]++; });
+  const oppTypePills=Object.entries(oppTypeCount).filter(([,n])=>n>0).map(([t,n])=>`<span class="type-badge ${TYPE_CLASS[t]||'tb-core'}" style="margin-right:.3rem;opacity:.8">${t} ×${n}</span>`).join('');
+
+  // Two-column layout when opponent comp present
+  const compLayout = hasOppComp
+    ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:.5rem;">
+        <div>${mkCompBlock(a.units,'Your Composition')}</div>
+        <div>
+          <div style="border-top:1px solid rgba(201,168,76,.12);padding-top:.8rem;margin-top:.8rem;">
+            <div class="comp-header">
+              <span class="comp-title" style="color:var(--text-muted)">
+                Opponent${a.opponent?` · <span class="${oppFc}" style="font-size:.62rem;display:inline-flex;align-items:center;gap:.25rem">${factionIconEl(a.opponent,18)}${a.opponent}</span>`:''}</span>
+              <span class="comp-total" style="color:var(--text-muted)">${(a.oppUnits||[]).length} units · ${oppTotalPts.toLocaleString()} pts</span>
+            </div>
+            ${oppTypePills ? `<div style="margin-bottom:.6rem">${oppTypePills}</div>` : ''}
+          </div>
+          ${mkCompBlock(a.oppUnits,"Opponent's Composition")}
+        </div>
+       </div>`
+    : mkCompBlock(a.units);
+
+  return `<div class="ac" id="rc-${a.id}" style="margin-bottom:.85rem">
+    <div class="ctop">
+      <div>
+        <div class="cft ${fc}" style="display:flex;align-items:center;gap:.35rem;">${factionIconEl(a.faction,20)}${a.faction}</div>
+        <div class="cnm">${clean(a.name)}</div>
+        <div class="cpl">by ${clean(a.player)}</div>
+      </div>
+      <div class="cpb">
+        <span class="cpv">${a.points.toLocaleString()}</span>
+        <span class="cpl2">battle pts</span>
+      </div>
+    </div>
+    <div style="margin-bottom:.6rem;display:flex;flex-wrap:wrap;gap:.25rem;align-items:center">
+      ${typePills}
+      ${badge(a.result)}
+      ${hasOppComp?`<span style="font-size:.78rem;color:var(--text-muted);font-style:italic;margin-left:.25rem;display:inline-flex;align-items:center;gap:.3rem">${factionIconEl(a.opponent,18)} vs ${a.opponent||'opponent'} (${oppTotalPts.toLocaleString()}pts)</span>`:''}
+    </div>
+    ${compLayout}
+    <div class="cfoot" style="margin-top:.65rem">
+      <span class="cdt">${fmtD(a.date)}${a.event?' · '+a.event:''}</span>
+    </div>
+  </div>`;
+}
+
+function renderRosters(){
+  popRosterFacFilter();
+  const list=getRosterList();
+  const c=document.getElementById('roster-cards');
+  if(!list.length){
+    const hasArmies=armies.length>0;
+    c.innerHTML=`<div class="empty"><div class="eico">⚔</div><p>${hasArmies?'No armies with composition data yet.<br>Add unit breakdowns or import JSON when submitting.':'No armies recorded yet.'}</p></div>`;
+    return;
+  }
+  c.innerHTML=list.map(mkRosterCard).join('');
+}
+
+['rf-fac','rf-srch','rf-sort'].forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener('input',renderRosters);
+  el.addEventListener('change',renderRosters);
+});
+
+// ── PATCH NAV to handle rosters ──
+document.querySelectorAll('.nt').forEach(btn=>{
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.nt').forEach(b=>b.classList.remove('on'));
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+    this.classList.add('on');
+    document.getElementById('page-'+this.dataset.page).classList.add('on');
+    if(this.dataset.page==='charts') renderCharts();
+    if(this.dataset.page==='leaderboard') renderLB();
+    if(this.dataset.page==='rosters') renderRosters();
+  });
+});
+
+// ── JSON IMPORT ──
+
+// Hover style on label
+const impLbl=document.getElementById('json-import-label');
+impLbl.addEventListener('mouseenter',()=>impLbl.style.cssText+=';border-color:var(--gold);color:var(--aged)');
+impLbl.addEventListener('mouseleave',()=>{ impLbl.style.borderColor='rgba(201,168,76,.25)'; impLbl.style.color='var(--text-muted)'; });
+
+// File input change
+document.getElementById('json-import-input').addEventListener('change',function(){
+  if(this.files[0]) readImportFile(this.files[0]);
+  this.value=''; // reset so same file can be re-imported
+});
+
+// Drag-and-drop on whole composition section (show drop zone while dragging)
+const dropZone=document.getElementById('json-drop-zone');
+const compSection=dropZone.parentElement;
+
+compSection.addEventListener('dragover',e=>{
+  e.preventDefault();
+  dropZone.style.display='block';
+  dropZone.style.borderColor='var(--gold)';
+  dropZone.style.background='rgba(201,168,76,.08)';
+});
+compSection.addEventListener('dragleave',e=>{
+  if(!compSection.contains(e.relatedTarget)){
+    dropZone.style.display='none';
+  }
+});
+compSection.addEventListener('drop',e=>{
+  e.preventDefault();
+  dropZone.style.display='none';
+  const file=[...e.dataTransfer.files].find(f=>f.name.endsWith('.json'));
+  if(file) readImportFile(file);
+  else showToast('⚠ Please drop a .json file.',true);
+});
+
+function readImportFile(file){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const json=JSON.parse(e.target.result);
+      const units=parseImportJSON(json);
+      if(!units||!units.length){ showToast('⚠ No units found in that file.',true); return; }
+      clearUnits();
+      units.forEach(u=>mkUnitCard(u));
+      showToast(`✦ Imported ${units.length} unit${units.length!==1?'s':''} from ${file.name}`);
+      // Auto-fill army name & faction if present and fields are empty
+      const meta=extractMeta(json);
+      if(meta.name && !document.getElementById('s-nm').value) document.getElementById('s-nm').value=meta.name;
+      if(meta.faction){
+        const sel=document.getElementById('s-fac');
+        const match=[...sel.options].find(o=>o.value.toLowerCase()===meta.faction.toLowerCase()||o.text.toLowerCase()===meta.faction.toLowerCase());
+        if(match && !sel.value) sel.value=match.value;
+      }
+      if(meta.points && !document.getElementById('s-pt').value){
+        // Snap to nearest 250-pt increment between 500–3000
+        const snapped = Math.min(3000, Math.max(500, Math.round(meta.points / 250) * 250));
+        document.getElementById('s-pt').value = snapped;
+        updateBudget();
+      }
+    } catch(err){
+      showToast('⚠ Could not parse that JSON file.',true);
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function extractMeta(json){
+  // Our own export: { armies: [...] }
+  if(json.armies && json.armies[0]){
+    const a=json.armies[0];
+    return { name:a.name||'', faction:a.faction||'', points:a.points||0 };
+  }
+  // old-world-builder.com: top-level { name, army, points, ... }
+  if(json.army || json.name){
+    // Map OWB army slug to our faction names
+    const ARMY_MAP={
+      // Core factions
+      'empire-of-man':'Empire of Man',
+      'the-empire':'Empire of Man',
+      'kingdom-of-bretonnia':'Kingdom of Bretonnia',
+      'bretonnia':'Kingdom of Bretonnia',
+      'dwarfen-mountain-holds':'Dwarfen Mountain Holds',
+      'dwarfen-holds':'Dwarfen Mountain Holds',
+      'dwarfs':'Dwarfen Mountain Holds',
+      'high-elf-realms':'High Elf Realms',
+      'high-elves':'High Elf Realms',
+      'wood-elf-realms':'Wood Elf Realms',
+      'wood-elves':'Wood Elf Realms',
+      'orc-and-goblin-tribes':'Orc & Goblin Tribes',
+      'orcs-and-goblins':'Orc & Goblin Tribes',
+      'orc-goblin-tribes':'Orc & Goblin Tribes',
+      'warriors-of-chaos':'Warriors of Chaos',
+      'slaves-to-darkness':'Warriors of Chaos',
+      'beastmen-brayherds':'Beastmen Brayherds',
+      'beastmen':'Beastmen Brayherds',
+      'tomb-kings-of-khemri':'Tomb Kings of Khemri',
+      'tomb-kings':'Tomb Kings of Khemri',
+      // New
+      'grand-cathay':'Grand Cathay',
+      // Legacy
+      'dark-elves':'Dark Elves',
+      'dark-elf-realms':'Dark Elves',
+      'skaven':'Skaven',
+      'skaven-clans':'Skaven',
+      'vampire-counts':'Vampire Counts',
+      'von-carstein':'Vampire Counts',
+      'undead-legions':'Vampire Counts',
+      'daemons-of-chaos':'Daemons of Chaos',
+      'legions-of-chaos':'Daemons of Chaos',
+      'ogre-kingdoms':'Ogre Kingdoms',
+      'lizardmen':'Lizardmen',
+      'seraphon':'Lizardmen',
+      'chaos-dwarfs':'Chaos Dwarfs',
+      'chaos-dwarf-legions':'Chaos Dwarfs',
+      'legion-of-azgorh':'Chaos Dwarfs',
+      // Other
+      'dogs-of-war':'Dogs of War',
+      'regiments-of-renown':'Dogs of War',
+      'kislev':'Kislev',
+      'realms-of-men':'Realms of Men',
+      'regiments-of-renown-list':'Regiments of Renown',
+    };
+    return {
+      name: json.name||'',
+      faction: ARMY_MAP[json.army]||json.army||'',
+      points: json.points||0
+    };
+  }
+  return {};
+}
+
+function parseImportJSON(json){
+  // ── Format 1: Our own registry export { armies: [{ units:[...] }] } ──
+  if(json.armies && json.armies[0] && Array.isArray(json.armies[0].units)){
+    return normaliseUnits(json.armies[0].units);
+  }
+  // ── Format 2: Registry single-army { units: [...] } ──
+  if(Array.isArray(json.units)){
+    return normaliseUnits(json.units);
+  }
+  // ── Format 3: old-world-builder.com ──
+  // Detected by 'army'/'game' field or presence of category arrays
+  if(json.army || json.game || Array.isArray(json.characters) || Array.isArray(json.core)){
+    return extractOWBUnits(json);
+  }
+  // ── Format 4: bare array ──
+  if(Array.isArray(json)){
+    return normaliseUnits(json);
+  }
+  return [];
+}
+
+function normaliseUnits(arr){
+  return arr.map(u=>({
+    name: u.name||'',
+    type: u.type||'Core',
+    models: u.models||null,
+    ppm: u.ppm||null,
+    base: u.base||0,
+    total: u.total||u.pts||0,
+    magic: u.magic||'',
+    rules: u.rules||'',
+    notes: u.notes||'',
+    upgrades: Array.isArray(u.upgrades)?u.upgrades:[]
+  })).filter(u=>u.name||u.total);
+}
+
+function extractOWBUnits(json){
+  const CAT_MAP={
+    characters:'Character', core:'Core', special:'Special',
+    rare:'Rare', mercenaries:'Core', allies:'Core',
+  };
+
+  const units=[];
+
+  Object.entries(CAT_MAP).forEach(([key, type])=>{
+    const arr=json[key];
+    if(!Array.isArray(arr)) return;
+
+    arr.forEach(u=>{
+      const name = u.name_en || u.name || '';
+      if(!name) return;
+
+      const isCharacter = type==='Character' || (u.strength==null && u.minimum==null);
+      const models = isCharacter ? 1 : (u.strength || u.minimum || 1);
+      const basePts = u.points || 0;
+      let total = isCharacter ? basePts : basePts * models;
+
+      // Upgrade labels: pts always 0 so recalcUnit never double-counts.
+      // The correct total is stored in u.total and displayed directly.
+      const upgradeLabels = [];
+
+      function processItems(items){
+        (items||[]).forEach(item=>{
+          const pts = item.points || 0;
+
+          if(item.stackable && item.stackableCount){
+            const add = pts * item.stackableCount;
+            total += add;
+            upgradeLabels.push({name:`${item.name_en||''} ×${item.stackableCount} (${add}pts)`, pts:0});
+            return;
+          }
+
+          if(!item.active) return;
+          if(item.equippedDefault || item.activeDefault) return;
+          if(!pts){
+            processItems(item.options);
+            return;
+          }
+
+          const add = item.perModel ? pts * models : pts;
+          total += add;
+          upgradeLabels.push({name:`${item.name_en||''} (${add}pts)`, pts:0});
+          processItems(item.options);
+        });
+      }
+
+      processItems(u.equipment);
+      processItems(u.armor);
+      processItems(u.options);
+
+      // ── Command entries ──
+      (u.command||[]).forEach(c=>{
+        if(!c.active) return;
+        const pts = c.points || 0;
+        if(pts){
+          total += pts;
+          upgradeLabels.push({name:`${c.name_en||''} (${pts}pts)`, pts:0});
+        }
+        const cmdMagic = c.magic || {};
+        (cmdMagic.selected||[]).forEach(mi=>{
+          const mpts = mi.points || 0;
+          if(mpts){
+            total += mpts;
+            upgradeLabels.push({name:`${mi.name_en||''} (${mpts}pts)`, pts:0});
+          }
+        });
+      });
+
+      // ── Active mount ──
+      const activeMount = (u.mounts||[]).find(m=>m.active && m.points>0);
+      if(activeMount){
+        total += activeMount.points;
+        upgradeLabels.push({name:`Mount: ${activeMount.name_en||''} (${activeMount.points}pts)`, pts:0});
+        (activeMount.options||[]).forEach(mo=>{
+          if(!mo.active || !mo.points) return;
+          total += mo.points;
+          upgradeLabels.push({name:`${mo.name_en||''} (${mo.points}pts)`, pts:0});
+        });
+      }
+
+      // ── Magic items on the unit ──
+      const magicItems = [];
+      (u.items||[]).forEach(slot=>{
+        (slot.selected||[]).forEach(mi=>{
+          const mpts = mi.points || 0;
+          total += mpts;
+          magicItems.push((mi.name_en||'') + (mpts ? ` (${mpts}pts)` : ''));
+        });
+      });
+      ((u.magic||{}).items||[]).forEach(mi=>{
+        if(mi.name_en) magicItems.push(mi.name_en);
+      });
+
+      // ── Detachments ──
+      (u.detachments||[]).forEach(det=>{
+        const add = (det.points||0) * (det.strength||1);
+        total += add;
+        upgradeLabels.push({name:`${det.name_en||''} ×${det.strength||1} (${add}pts)`, pts:0});
+      });
+
+      const rules = u.specialRules?.name_en || '';
+
+      // For regiments: use ppm for display, but set total directly so recalcUnit
+      // in auto mode (models×ppm) would match. However auto mode adds upgPts on top —
+      // since all upgradePts are 0, auto calc = models×ppm + 0. But models×ppm is just
+      // the base cost; upgrades are already folded into total. So we pass total directly
+      // and set ppm=null to force manual mode for all OWB imports.
+      units.push({
+        name,
+        type,
+        models: isCharacter ? null : models,
+        ppm: null,          // always manual mode — total is pre-computed correctly
+        base: 0,
+        total,
+        magic: magicItems.join(', '),
+        rules,
+        notes: u.notes?.name_en || '',
+        upgrades: upgradeLabels,
+      });
+    });
+  });
+
+  return units;
+}
+
+// ── OPPONENT MANUAL UNIT BUILDER ──
+let oppUcCount = 0;
+
+function mkOppUnitCard(u={}){
+  const id='ouc-'+oppUcCount++;
+  const type=u.type||'Core';
+  const tc=TYPE_CLASS[type]||'tb-core';
+  const faction=getOppFaction();
+  const nameHtml=buildNameEl(faction,type,u.name||'');
+  const upgHtml=(u.upgrades||[]).map((up,i)=>mkUpgradeRow(id,up,i)).join('');
+  const card=document.createElement('div');
+  card.className='uc'; card.id=id; card.dataset.open='1';
+  card.innerHTML=`
+    <div class="uc-head">
+      <span class="uc-drag" title="Drag to reorder">⠿</span>
+      <select class="uc-type-sel ${tc}">
+        ${UNIT_TYPES.map(t=>`<option${t===type?' selected':''}>${t}</option>`).join('')}
+      </select>
+      ${nameHtml}
+      <span class="uc-pts-display" data-id="${id}">0 pts</span>
+      <button type="button" class="uc-toggle open" title="Collapse">▲</button>
+      <button type="button" class="uc-del" title="Remove unit">✕</button>
+    </div>
+    <div class="uc-body open">
+      <div class="uc-row uc-row-4">
+        <div class="uc-field"><label>Models</label><input type="number" class="u-models" min="1" placeholder="e.g. 20" value="${u.models||''}"></div>
+        <div class="uc-field"><label>Pts / Model</label><input type="number" class="u-ppm" min="0" placeholder="e.g. 7" value="${u.ppm||''}"></div>
+        <div class="uc-field"><label>Base Pts</label><input type="number" class="u-base" min="0" placeholder="e.g. 0" value="${u.base||''}"></div>
+        <div class="uc-field"><label>Total Pts</label><input type="number" class="u-total" min="0" placeholder="auto" value="${u.total||''}"></div>
+      </div>
+      <div class="uc-calc" id="${id}-calc">Enter models × pts/model, or set total directly.</div>
+      <div class="uc-row uc-row-2" style="margin-top:.5rem">
+        <div class="uc-field"><label>Magic Items</label><input type="text" class="u-magic" placeholder="e.g. Sword of Might…" value="${u.magic||''}"></div>
+        <div class="uc-field"><label>Special Rules</label><input type="text" class="u-rules" placeholder="e.g. Stubborn, Fear" value="${u.rules||''}"></div>
+      </div>
+      <div class="upgrades-area">
+        <div class="upgrades-lbl">Upgrades &amp; Options<button type="button" class="add-upgrade-btn" data-card="${id}">+ Add option</button></div>
+        <div class="upgrades-list" id="${id}-upgs">${upgHtml}</div>
+      </div>
+      <div class="uc-field" style="margin-top:.5rem">
+        <label>Notes</label>
+        <textarea class="u-notes" rows="2" placeholder="Command group, movement tray…">${u.notes||''}</textarea>
+      </div>
+    </div>`;
+
+  // Type select
+  const typeSel=card.querySelector('.uc-type-sel');
+  typeSel.addEventListener('change',function(){
+    this.className='uc-type-sel '+(TYPE_CLASS[this.value]||'tb-core');
+    const oFac=getOppFaction();
+    const head=card.querySelector('.uc-head');
+    const curName=getUnitName(head);
+    head.querySelectorAll('.uc-name-inp,.uc-name-sel,.uc-name-custom').forEach(el=>el.remove());
+    const tmp=document.createElement('div');
+    tmp.innerHTML=buildNameEl(oFac,this.value,curName);
+    const ptsDisp=head.querySelector('.uc-pts-display');
+    [...tmp.children].forEach(el=>head.insertBefore(el,ptsDisp));
+    wireNameEl(head,card);
+    recalcOppUnit(card);
+  });
+
+  // Toggle
+  card.querySelector('.uc-toggle').addEventListener('click',function(){
+    const body=card.querySelector('.uc-body');
+    const isOpen=body.classList.toggle('open');
+    this.classList.toggle('open',isOpen);
+  });
+
+  // Delete
+  card.querySelector('.uc-del').addEventListener('click',()=>{ card.remove(); updateOppBudget(); });
+
+  // Add upgrade
+  card.querySelector('.add-upgrade-btn').addEventListener('click',()=>{
+    const list=card.querySelector('.upgrades-list');
+    list.insertAdjacentHTML('beforeend',mkUpgradeRow(id,{},list.children.length));
+    bindUpgradeRow(list.lastElementChild, card, recalcOppUnit);
+    recalcOppUnit(card);
+  });
+
+  // Live recalc
+  card.querySelectorAll('.u-models,.u-ppm,.u-base,.u-total').forEach(inp=>{
+    inp.addEventListener('input',()=>recalcOppUnit(card));
+  });
+
+  // Bind existing upgrade rows
+  card.querySelectorAll('.upgrade-row').forEach(row=>bindUpgradeRow(row,card,recalcOppUnit));
+
+  document.getElementById('opp-unit-cards').appendChild(card);
+  wireNameEl(card.querySelector('.uc-head'), card);
+  recalcOppUnit(card);
+  updateOppBudget();
+  return card;
+}
+
+function recalcOppUnit(card){
+  const modelsEl=card.querySelector('.u-models');
+  const ppmEl=card.querySelector('.u-ppm');
+  const baseEl=card.querySelector('.u-base');
+  const totalEl=card.querySelector('.u-total');
+  const calcEl=card.querySelector('[id$="-calc"]');
+  const models=parseInt(modelsEl.value)||0;
+  const ppm=parseFloat(ppmEl.value)||0;
+  const base=parseInt(baseEl.value)||0;
+  const upgPts=[...card.querySelectorAll('.upg-pts')].reduce((s,i)=>s+(parseInt(i.value)||0),0);
+  let total=parseInt(totalEl.value)||0;
+  if(models>0&&ppm>0){
+    total=Math.round(models*ppm)+base+upgPts;
+    totalEl.value=total;
+    if(calcEl) calcEl.textContent=`${models} × ${ppm} + ${base} base + ${upgPts} upgrades = ${total} pts`;
+  } else if(total>0){
+    if(calcEl) calcEl.textContent=`Manual total: ${total} pts`;
+    total+=upgPts;
+  } else {
+    if(calcEl) calcEl.textContent='Enter models × pts/model, or set total directly.';
+    total=upgPts;
+  }
+  const disp=card.querySelector('.uc-pts-display');
+  if(disp) disp.textContent=total+' pts';
+  updateOppBudget();
+}
+
+function updateOppBudget(){
+  const maxPts=parseInt(document.getElementById('s-pt').value)||0;
+  let used=0;
+  document.querySelectorAll('#opp-unit-cards .uc').forEach(card=>{
+    used+=parseInt(card.querySelector('.uc-pts-display')?.textContent)||0;
+  });
+  document.getElementById('opp-comp-used').textContent=used.toLocaleString();
+  document.getElementById('opp-comp-max').textContent=maxPts?maxPts.toLocaleString():'—';
+  const bar=document.getElementById('opp-comp-bar');
+  const usedEl=document.getElementById('opp-comp-used');
+  const pct=maxPts?Math.min(used/maxPts*100,100):0;
+  const over=maxPts&&used>maxPts;
+  bar.style.width=pct+'%';
+  bar.classList.toggle('over',over);
+  usedEl.classList.toggle('comp-budget-over',over);
+}
+
+function getOppUnits(){
+  const units=[];
+  document.querySelectorAll('#opp-unit-cards .uc').forEach(card=>{
+    const name=getUnitName(card.querySelector('.uc-head'));
+    const type=card.querySelector('.uc-type-sel')?.value||'Core';
+    const models=parseInt(card.querySelector('.u-models')?.value)||null;
+    const ppm=parseFloat(card.querySelector('.u-ppm')?.value)||null;
+    const base=parseInt(card.querySelector('.u-base')?.value)||0;
+    const total=parseInt(card.querySelector('.uc-pts-display')?.textContent)||0;
+    const magic=card.querySelector('.u-magic')?.value?.trim()||'';
+    const rules=card.querySelector('.u-rules')?.value?.trim()||'';
+    const notes=card.querySelector('.u-notes')?.value?.trim()||'';
+    const upgrades=[...card.querySelectorAll('.upgrade-row')].map(r=>({
+      name:r.querySelector('.upg-name')?.value?.trim()||'',
+      pts:parseInt(r.querySelector('.upg-pts')?.value)||0
+    })).filter(u=>u.name||u.pts);
+    if(name||total) units.push({name,type,models,ppm,base,total,magic,rules,notes,upgrades});
+  });
+  return units;
+}
+
+
+
+const oppFacComp = document.getElementById('opp-fac-comp');
+const oppFacMain = document.getElementById('s-of');
+
+oppFacComp.addEventListener('change', function(){
+  // Sync to main s-of field
+  const match = [...oppFacMain.options].find(o => o.value === this.value || o.text === this.value);
+  if(match) oppFacMain.value = match.value;
+  refreshOppUnitDropdowns(this.value);
+  updateOppBudget();
+});
+
+oppFacMain.addEventListener('change', function(){
+  // Sync to composition selector
+  oppFacComp.value = this.value;
+  refreshOppUnitDropdowns(this.value);
+  updateOppBudget();
+});
+
+function getOppFaction(){
+  return document.getElementById('opp-fac-comp').value ||
+         document.getElementById('s-of').value;
+}
+
+function refreshOppUnitDropdowns(faction){
+  document.querySelectorAll('#opp-unit-cards .uc').forEach(card=>{
+    const type=card.querySelector('.uc-type-sel')?.value||'Core';
+    const head=card.querySelector('.uc-head');
+    if(!head) return;
+    const currentName=getUnitName(head);
+    head.querySelectorAll('.uc-name-inp,.uc-name-sel,.uc-name-custom').forEach(el=>el.remove());
+    const tmp=document.createElement('div');
+    tmp.innerHTML=buildNameEl(faction,type,currentName);
+    const ptsDisp=head.querySelector('.uc-pts-display');
+    [...tmp.children].forEach(el=>head.insertBefore(el,ptsDisp));
+    wireNameEl(head,card);
+  });
+}
+
+// Wire opponent type-section buttons
+document.querySelectorAll('.opp-type-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>mkOppUnitCard({type:btn.dataset.add}));
+});
+
+// Also update opp budget when battle points changes
+document.getElementById('s-pt').addEventListener('change', updateOppBudget);
+
+// ── OPPONENT JSON IMPORT ──
+let oppImportedUnits = [];
+
+function clearOppImport(){
+  oppImportedUnits = [];
+  document.getElementById('opp-summary').style.display='none';
+  document.getElementById('opp-summary-name').textContent='';
+  document.getElementById('opp-summary-pts').textContent='';
+  document.getElementById('opp-summary-units').innerHTML='';
+  document.getElementById('opp-manual-builder').style.display='block';
+}
+
+function clearOppManual(){
+  document.getElementById('opp-unit-cards').innerHTML='';
+  oppUcCount=0;
+  document.getElementById('opp-fac-comp').value='';
+  updateOppBudget();
+}
+
+function showOppSummary(units, meta){
+  oppImportedUnits = units;
+  const totalPts = units.reduce((s,u)=>s+(u.total||0),0);
+  const summaryEl = document.getElementById('opp-summary');
+  const nameEl = document.getElementById('opp-summary-name');
+  const ptsEl = document.getElementById('opp-summary-pts');
+  const unitsEl = document.getElementById('opp-summary-units');
+
+  const label = [meta.faction, meta.name].filter(Boolean).join(' — ') || 'Opponent Army';
+  nameEl.textContent = label;
+  ptsEl.textContent = totalPts.toLocaleString() + ' pts';
+
+  // Type summary badges
+  const typeCount = {Character:0, Core:0, Special:0, Rare:0};
+  units.forEach(u=>{ if(typeCount[u.type]!==undefined) typeCount[u.type]++; });
+  unitsEl.innerHTML = Object.entries(typeCount)
+    .filter(([,n])=>n>0)
+    .map(([t,n])=>`<span class="type-badge ${TYPE_CLASS[t]||'tb-core'}">${t} ×${n}</span>`)
+    .join('') +
+    `<span style="font-size:.76rem;color:var(--text-muted);margin-left:.4rem;font-style:italic">${units.length} unit${units.length!==1?'s':''}</span>`;
+
+  summaryEl.style.display='block';
+  // Hide manual builder when JSON is imported — JSON takes precedence
+  document.getElementById('opp-manual-builder').style.display='none';
+
+  // Auto-fill opponent faction/points if fields empty
+  if(meta.faction){
+    const sel=document.getElementById('s-of');
+    const match=[...sel.options].find(o=>o.value.toLowerCase()===meta.faction.toLowerCase()||o.text.toLowerCase()===meta.faction.toLowerCase());
+    if(match && !sel.value){
+      sel.value=match.value;
+      document.getElementById('opp-fac-comp').value=match.value;
+    }
+  }
+}
+
+// Label hover style
+const oppLbl = document.getElementById('opp-import-label');
+oppLbl.addEventListener('mouseenter',()=>{ oppLbl.style.borderColor='var(--gold)'; oppLbl.style.color='var(--aged)'; });
+oppLbl.addEventListener('mouseleave',()=>{ oppLbl.style.borderColor='rgba(201,168,76,.25)'; oppLbl.style.color='var(--text-muted)'; });
+
+// File input
+document.getElementById('opp-import-input').addEventListener('change',function(){
+  if(this.files[0]) readOppFile(this.files[0]);
+  this.value='';
+});
+
+// Drag and drop on opponent section
+const oppDropZone = document.getElementById('opp-drop-zone');
+const oppSection = oppDropZone.parentElement;
+oppSection.addEventListener('dragover',e=>{
+  e.preventDefault();
+  oppDropZone.style.display='block';
+  oppDropZone.style.borderColor='var(--gold)';
+  oppDropZone.style.background='rgba(201,168,76,.08)';
+});
+oppSection.addEventListener('dragleave',e=>{
+  if(!oppSection.contains(e.relatedTarget)) oppDropZone.style.display='none';
+});
+oppSection.addEventListener('drop',e=>{
+  e.preventDefault();
+  oppDropZone.style.display='none';
+  const file=[...e.dataTransfer.files].find(f=>f.name.endsWith('.json'));
+  if(file) readOppFile(file);
+  else showToast('⚠ Please drop a .json file.',true);
+});
+
+// Clear button
+document.getElementById('opp-clear-btn').addEventListener('click', clearOppImport);
+
+function readOppFile(file){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const json=JSON.parse(e.target.result);
+      const units=parseImportJSON(json);
+      if(!units||!units.length){ showToast('⚠ No units found in that file.',true); return; }
+      const meta=extractMeta(json);
+      showOppSummary(units, meta);
+      showToast(`✦ Opponent: ${units.length} unit${units.length!==1?'s':''} imported from ${file.name}`);
+    } catch(err){
+      showToast('⚠ Could not parse that JSON file.',true);
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ── CUSTOM FACTION SELECT WITH ICONS ──
+const FACTION_GROUPS=[
+  {label:'Core Factions', factions:['Empire of Man','Kingdom of Bretonnia','Dwarfen Mountain Holds','High Elf Realms','Wood Elf Realms','Orc & Goblin Tribes','Warriors of Chaos','Beastmen Brayherds','Tomb Kings of Khemri']},
+  {label:'New Factions', factions:['Grand Cathay']},
+  {label:'Legacy Factions', factions:['Dark Elves','Skaven','Vampire Counts','Daemons of Chaos','Ogre Kingdoms','Lizardmen','Chaos Dwarfs']},
+  {label:'Other', factions:['Dogs of War','Kislev','Regiments of Renown','Realms of Men']}
+];
+
+function buildFacSelect(selectEl, placeholder='Select faction…'){
+  const wrap=document.createElement('div');
+  wrap.className='fac-sel-wrap';
+  selectEl.parentNode.insertBefore(wrap,selectEl);
+  selectEl.style.display='none';
+  wrap.appendChild(selectEl);
+
+  const trigger=document.createElement('div');
+  trigger.className='fac-sel-trigger';
+  trigger.innerHTML=`<span class="fac-placeholder">${placeholder}</span><span class="fac-sel-arrow">▼</span>`;
+
+  const dropdown=document.createElement('div');
+  dropdown.className='fac-sel-dropdown';
+  dropdown.style.display='none';
+
+  // Build items
+  function buildItems(){
+    dropdown.innerHTML='';
+    // Blank option
+    if(placeholder){
+      const blank=document.createElement('div');
+      blank.className='fac-sel-item'+(selectEl.value===''?' selected':'');
+      blank.innerHTML=`<span class="fac-placeholder">${placeholder}</span>`;
+      blank.addEventListener('click',()=>{ setVal(''); close(); });
+      dropdown.appendChild(blank);
+    }
+    FACTION_GROUPS.forEach(g=>{
+      const grp=document.createElement('div');
+      grp.className='fac-sel-group';
+      grp.textContent=g.label;
+      dropdown.appendChild(grp);
+      g.factions.forEach(f=>{
+        const item=document.createElement('div');
+        item.className='fac-sel-item'+(selectEl.value===f?' selected':'');
+        item.dataset.val=f;
+        item.innerHTML=factionIconEl(f,18)+`<span>${f}</span>`;
+        item.addEventListener('click',()=>{ setVal(f); close(); });
+        dropdown.appendChild(item);
+      });
+    });
+  }
+
+  function setVal(val){
+    selectEl.value=val;
+    selectEl.dispatchEvent(new Event('change',{bubbles:true}));
+    updateTrigger();
+    // Update selected state
+    dropdown.querySelectorAll('.fac-sel-item').forEach(el=>{
+      el.classList.toggle('selected', el.dataset.val===val||(val===''&&!el.dataset.val));
+    });
+  }
+
+  function updateTrigger(){
+    const val=selectEl.value;
+    const arrow=trigger.querySelector('.fac-sel-arrow');
+    if(val && FACTION_ICONS[val]){
+      trigger.innerHTML='';
+      trigger.appendChild(document.createElement('span')); // temp
+      trigger.innerHTML=factionIconEl(val,18)+`<span>${val}</span><span class="fac-sel-arrow">▼</span>`;
+    } else if(val){
+      trigger.innerHTML=`<span>${val}</span><span class="fac-sel-arrow">▼</span>`;
+    } else {
+      trigger.innerHTML=`<span class="fac-placeholder">${placeholder}</span><span class="fac-sel-arrow">▼</span>`;
+    }
+  }
+
+  function open(){
+    buildItems();
+    dropdown.style.display='block';
+    trigger.classList.add('open');
+    // Scroll selected item into view
+    const sel=dropdown.querySelector('.selected');
+    if(sel) setTimeout(()=>sel.scrollIntoView({block:'nearest'}),10);
+  }
+  function close(){
+    dropdown.style.display='none';
+    trigger.classList.remove('open');
+  }
+
+  trigger.addEventListener('click',e=>{ e.stopPropagation(); dropdown.style.display==='none'?open():close(); });
+  document.addEventListener('click',()=>close());
+  dropdown.addEventListener('click',e=>e.stopPropagation());
+
+  wrap.insertBefore(trigger,selectEl);
+  wrap.appendChild(dropdown);
+
+  // Sync if select is programmatically changed (e.g. clearUnits, JSON import)
+  const observer=new MutationObserver(()=>updateTrigger());
+  // Poll for value changes (for programmatic .value= assignments)
+  let lastVal=selectEl.value;
+  setInterval(()=>{ if(selectEl.value!==lastVal){ lastVal=selectEl.value; updateTrigger(); }},200);
+
+  updateTrigger();
+  return {setVal, updateTrigger};
+}
+
+// Enhance all faction selects
+buildFacSelect(document.getElementById('s-fac'),'Select faction…');
+buildFacSelect(document.getElementById('s-of'),'Unknown / Select…');
+buildFacSelect(document.getElementById('opp-fac-comp'),'Select faction…');
+
+// Auto-load if session token exists
+if (authToken) {
+  load();
+} else {
+  renderCards();
+}
+</script>
+</body>
+</html>

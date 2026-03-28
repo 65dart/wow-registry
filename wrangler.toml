@@ -1,0 +1,12 @@
+# wrangler.toml
+# Place this file in the same folder as worker.js
+# Replace <YOUR_DATABASE_ID> with the ID output from: wrangler d1 create wow-registry
+
+name             = "wow-registry-api"
+main             = "worker.js"
+compatibility_date = "2024-09-23"
+
+[[d1_databases]]
+binding       = "DB"
+database_name = "wow-registry"
+database_id   = "39587af0-d043-444d-abf4-d2ebcda18f57"
