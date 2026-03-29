@@ -84,6 +84,74 @@ function err(msg, status = 400, origin = '', env = {}) {
   return json({ error: msg }, status, origin, env);
 }
 
+// ── createArmyRecords — saves both players' battle to the main armies table ──
+async function createArmyRecords(env, evt, pairing, result) {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+
+    // Fetch participant data for both players
+    const p1 = await env.DB.prepare(
+      'SELECT * FROM event_participants WHERE event_id = ? AND user_id = ?'
+    ).bind(evt.id, pairing.player1_id).first();
+    const p2 = pairing.player2_id ? await env.DB.prepare(
+      'SELECT * FROM event_participants WHERE event_id = ? AND user_id = ?'
+    ).bind(evt.id, pairing.player2_id).first() : null;
+
+    // Determine results for each player
+    const p1result = result === 'player1' ? 'Win' : result === 'player2' ? 'Loss' : 'Draw';
+    const p2result = result === 'player2' ? 'Win' : result === 'player1' ? 'Loss' : 'Draw';
+
+    // Build army record for player 1
+    if (p1) {
+      const p1units = (() => { try { return JSON.parse(p1.units||'[]'); } catch(e){ return []; } })();
+      const army1 = {
+        player:    p1.username,
+        name:      p1.army_name || `${p1.username}'s Army`,
+        faction:   p1.faction   || '',
+        points:    evt.points_limit || 0,
+        oppPoints: evt.points_limit || 0,
+        result:    p1result,
+        opponent:  p2 ? p2.faction : '',
+        event:     evt.name,
+        notes:     `Round ${pairing.round} — ${evt.name}`,
+        units:     p1units,
+        oppUnits:  [],
+        date:      today,
+        likes:     0,
+      };
+      await env.DB.prepare(
+        'INSERT INTO armies (user_id, data) VALUES (?, ?)'
+      ).bind(pairing.player1_id, JSON.stringify(army1)).run();
+    }
+
+    // Build army record for player 2
+    if (p2 && pairing.player2_id) {
+      const p2units = (() => { try { return JSON.parse(p2.units||'[]'); } catch(e){ return []; } })();
+      const army2 = {
+        player:    p2.username,
+        name:      p2.army_name || `${p2.username}'s Army`,
+        faction:   p2.faction   || '',
+        points:    evt.points_limit || 0,
+        oppPoints: evt.points_limit || 0,
+        result:    p2result,
+        opponent:  p1 ? p1.faction : '',
+        event:     evt.name,
+        notes:     `Round ${pairing.round} — ${evt.name}`,
+        units:     p2units,
+        oppUnits:  [],
+        date:      today,
+        likes:     0,
+      };
+      await env.DB.prepare(
+        'INSERT INTO armies (user_id, data) VALUES (?, ?)'
+      ).bind(pairing.player2_id, JSON.stringify(army2)).run();
+    }
+  } catch(e) {
+    // Non-fatal — don't let army record creation failure break the result approval
+    console.error('createArmyRecords error:', e);
+  }
+}
+
 // ── Auth middleware — reads Bearer token from Authorization header ──
 async function authenticate(request, env) {
   const auth = request.headers.get('Authorization') || '';
@@ -115,6 +183,25 @@ export default {
     // Preflight
     if (method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders(origin, env) });
+    }
+
+    // ── POST /api/visit — record a unique visitor ──
+    if (path === '/api/visit' && method === 'POST') {
+      const { visitor_id } = await request.json().catch(() => ({}));
+      if (!visitor_id) return json({ ok: false }, 400, origin, env);
+      try {
+        await env.DB.prepare(
+          'INSERT OR IGNORE INTO visitors (visitor_id) VALUES (?)'
+        ).bind(visitor_id).run();
+      } catch(e) {}
+      const row = await env.DB.prepare('SELECT COUNT(*) as c FROM visitors').first();
+      return json({ ok: true, count: row.c }, 200, origin, env);
+    }
+
+    // ── GET /api/visit — get visitor count ──
+    if (path === '/api/visit' && method === 'GET') {
+      const row = await env.DB.prepare('SELECT COUNT(*) as c FROM visitors').first();
+      return json({ count: row.c }, 200, origin, env);
     }
 
     // ── POST /api/signup ──
@@ -547,6 +634,9 @@ export default {
           await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player2_id).run();
         }
 
+        // Save army records to main armies table
+        await createArmyRecords(env, evt, pairing, agreedResult);
+
         // Check if all pairings in round are approved — if last round, complete event
         const pending = await env.DB.prepare(
           `SELECT COUNT(*) as c FROM event_pairings WHERE event_id=? AND round=? AND approved=0 AND player2_id IS NOT NULL`
@@ -590,6 +680,9 @@ export default {
         await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player1_id).run();
         await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player2_id).run();
       }
+
+      // Save army records to main armies table
+      await createArmyRecords(env, evt, pairing, res);
 
       // Check if all pairings in round are approved — if so and last round, complete event
       const pending = await env.DB.prepare(

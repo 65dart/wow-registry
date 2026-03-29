@@ -105,3 +105,11 @@ CREATE TABLE IF NOT EXISTS event_pairings (
 CREATE INDEX IF NOT EXISTS idx_events_organiser   ON events(organiser_id);
 CREATE INDEX IF NOT EXISTS idx_participants_event ON event_participants(event_id);
 CREATE INDEX IF NOT EXISTS idx_pairings_event     ON event_pairings(event_id);
+
+-- =============================================================
+--  Visitor counter
+-- =============================================================
+CREATE TABLE IF NOT EXISTS visitors (
+  visitor_id TEXT PRIMARY KEY,           -- random ID stored in browser localStorage
+  first_seen TEXT NOT NULL DEFAULT (datetime('now'))
+);
