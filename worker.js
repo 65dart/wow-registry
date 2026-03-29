@@ -472,7 +472,7 @@ export default {
       return json({ ok: true }, 200, origin, env);
     }
 
-    // ── POST /api/events/:id/add-participant — organiser/admin manually adds a user ──
+    // ── POST /api/events/:id/add-participant — organiser/admin manually adds a user or guest ──
     const addParticipantMatch = path.match(/^\/api\/events\/(\d+)\/add-participant$/);
     if (addParticipantMatch && method === 'POST') {
       const eid = parseInt(addParticipantMatch[1]);
@@ -485,14 +485,7 @@ export default {
       if (evt.organiser_id !== user.user_id && !isPrivileged)
         return err('Only the organiser or an admin can add participants.', 403, origin, env);
 
-      const { username, army_name, faction } = await request.json().catch(() => ({}));
-      if (!username) return err('Username is required.', 400, origin, env);
-
-      // Look up the user by username
-      const targetUser = await env.DB.prepare(
-        'SELECT id, username FROM users WHERE username = ? COLLATE NOCASE'
-      ).bind(username).first();
-      if (!targetUser) return err(`No user found with username "${username}".`, 404, origin, env);
+      const { username, guest_name, army_name, faction, is_guest } = await request.json().catch(() => ({}));
 
       // Check participant limit
       if (evt.max_participants > 0) {
@@ -503,16 +496,39 @@ export default {
           return err(`This event is full (${evt.max_participants} players maximum).`, 400, origin, env);
       }
 
-      try {
-        await env.DB.prepare(
-          `INSERT INTO event_participants (event_id, user_id, username, faction, army_name, units)
-           VALUES (?, ?, ?, ?, ?, ?)`
-        ).bind(eid, targetUser.id, targetUser.username, faction||'', army_name||'', '[]').run();
-      } catch(e) {
-        return err(`${targetUser.username} is already in this event.`, 409, origin, env);
-      }
+      if (is_guest) {
+        // Guest — no user account required
+        if (!guest_name) return err('Guest name is required.', 400, origin, env);
+        const displayName = `${guest_name} (Guest)`;
+        // Use a negative unique ID based on timestamp to avoid conflict with real user IDs
+        const guestUserId = -(Date.now() % 2147483647);
+        try {
+          await env.DB.prepare(
+            `INSERT INTO event_participants (event_id, user_id, username, faction, army_name, units)
+             VALUES (?, ?, ?, ?, ?, ?)`
+          ).bind(eid, guestUserId, displayName, faction||'', army_name||'', '[]').run();
+        } catch(e) {
+          return err(`Could not add guest — please try again.`, 409, origin, env);
+        }
+        return json({ ok: true }, 201, origin, env);
+      } else {
+        // Registered user — look up by username
+        if (!username) return err('Username is required.', 400, origin, env);
+        const targetUser = await env.DB.prepare(
+          'SELECT id, username FROM users WHERE username = ? COLLATE NOCASE'
+        ).bind(username).first();
+        if (!targetUser) return err(`No user found with username "${username}".`, 404, origin, env);
 
-      return json({ ok: true }, 201, origin, env);
+        try {
+          await env.DB.prepare(
+            `INSERT INTO event_participants (event_id, user_id, username, faction, army_name, units)
+             VALUES (?, ?, ?, ?, ?, ?)`
+          ).bind(eid, targetUser.id, targetUser.username, faction||'', army_name||'', '[]').run();
+        } catch(e) {
+          return err(`${targetUser.username} is already in this event.`, 409, origin, env);
+        }
+        return json({ ok: true }, 201, origin, env);
+      }
     }
 
     // ── POST /api/events/:id/join — join event ──

@@ -2647,17 +2647,32 @@ function renderEventDetail(data){
   if(isOrganiser || isPrivileged()){
     html += `<div class="panel" style="margin-bottom:1.2rem;border-color:rgba(201,168,76,.2);">
       <div class="ptitle">👤 Add Participant</div>
-      <p style="font-size:.82rem;color:var(--text-muted);font-style:italic;margin-bottom:.9rem;">Manually add a registered user to this event by username.</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem;">
-        <div class="ff"><label>Username *</label><input type="text" id="ev-add-username" placeholder="Exact username…"></div>
-        <div class="ff"><label>Army Name</label><input type="text" id="ev-add-army" placeholder="e.g. The Iron Legion"></div>
+      <p style="font-size:.82rem;color:var(--text-muted);font-style:italic;margin-bottom:.9rem;">Add a registered user by username, or add a guest who doesn't have an account.</p>
+
+      <!-- Guest toggle -->
+      <div style="display:flex;gap:.5rem;margin-bottom:.9rem;">
+        <button class="subbtn ap-type-btn ap-type-active" data-type="registered" style="font-size:.72rem;padding:.3rem .8rem;">Registered User</button>
+        <button class="subbtn ap-type-btn" data-type="guest" style="font-size:.72rem;padding:.3rem .8rem;border-color:rgba(201,168,76,.2);color:var(--text-muted);">Guest</button>
       </div>
-      <div class="ff" style="margin-bottom:.8rem;">
-        <label>Faction</label>
-        <select id="ev-add-faction">
-          <option value="">Select faction…</option>
-          ${Object.keys(FACTION_UNITS).map(f=>`<option>${f}</option>`).join('')}
-        </select>
+
+      <!-- Registered user fields -->
+      <div id="ap-registered-fields">
+        <div class="ff" style="margin-bottom:.8rem;"><label>Username *</label><input type="text" id="ev-add-username" placeholder="Exact username…"></div>
+      </div>
+
+      <!-- Guest fields -->
+      <div id="ap-guest-fields" style="display:none;">
+        <div class="ff" style="margin-bottom:.8rem;"><label>Guest Name *</label><input type="text" id="ev-add-guest-name" placeholder="e.g. John Smith"></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem;">
+        <div class="ff"><label>Army Name</label><input type="text" id="ev-add-army" placeholder="e.g. The Iron Legion"></div>
+        <div class="ff"><label>Faction</label>
+          <select id="ev-add-faction">
+            <option value="">Select faction…</option>
+            ${Object.keys(FACTION_UNITS).map(f=>`<option>${f}</option>`).join('')}
+          </select>
+        </div>
       </div>
       <button class="subbtn" id="ev-add-participant-btn" style="font-size:.78rem;width:100%;">+ Add to Event</button>
       <div id="ev-add-status" style="margin-top:.5rem;font-size:.8rem;"></div>
@@ -2901,14 +2916,35 @@ function wireEventDetailButtons(event, participants){
     openEvent(event.id);
   });
 
+  // Add participant type toggle
+  let apType = 'registered';
+  document.querySelectorAll('.ap-type-btn').forEach(btn => {
+    btn.addEventListener('click', function(){
+      apType = this.dataset.type;
+      document.querySelectorAll('.ap-type-btn').forEach(b => {
+        b.classList.remove('ap-type-active');
+        b.style.borderColor = 'rgba(201,168,76,.2)';
+        b.style.color = 'var(--text-muted)';
+      });
+      this.classList.add('ap-type-active');
+      this.style.borderColor = '';
+      this.style.color = '';
+      document.getElementById('ap-registered-fields').style.display = apType === 'registered' ? 'block' : 'none';
+      document.getElementById('ap-guest-fields').style.display      = apType === 'guest'      ? 'block' : 'none';
+    });
+  });
+
   // Add participant manually
   document.getElementById('ev-add-participant-btn')?.addEventListener('click', async () => {
-    const username  = document.getElementById('ev-add-username')?.value.trim();
+    const isGuest   = apType === 'guest';
+    const username  = isGuest ? null : document.getElementById('ev-add-username')?.value.trim();
+    const guestName = isGuest ? document.getElementById('ev-add-guest-name')?.value.trim() : null;
     const army_name = document.getElementById('ev-add-army')?.value.trim()||'';
     const faction   = document.getElementById('ev-add-faction')?.value||'';
     const statusEl  = document.getElementById('ev-add-status');
 
-    if(!username){ showToast('⚠ Username is required.',true); return; }
+    if(!isGuest && !username){ showToast('⚠ Username is required.',true); return; }
+    if(isGuest && !guestName){ showToast('⚠ Guest name is required.',true); return; }
 
     const btn = document.getElementById('ev-add-participant-btn');
     btn.disabled = true; btn.textContent = '⏳ Adding…';
@@ -2918,18 +2954,20 @@ function wireEventDetailButtons(event, participants){
       const res = await fetch(`${API}/api/events/${event.id}/add-participant`, {
         method: 'POST',
         headers: apiHeaders(),
-        body: JSON.stringify({ username, army_name, faction })
+        body: JSON.stringify({ username, guest_name: guestName, army_name, faction, is_guest: isGuest })
       });
       const d = await res.json();
       if(!res.ok){
         if(statusEl){ statusEl.textContent = d.error || 'Could not add participant.'; statusEl.style.color='#d46060'; }
         showToast(d.error || '⚠ Could not add participant.', true);
       } else {
-        if(statusEl){ statusEl.textContent = `✦ ${username} added successfully.`; statusEl.style.color='#6aaf6a'; }
-        document.getElementById('ev-add-username').value = '';
+        const displayName = isGuest ? guestName : username;
+        if(statusEl){ statusEl.textContent = `✦ ${displayName} added successfully.`; statusEl.style.color='#6aaf6a'; }
+        if(!isGuest) document.getElementById('ev-add-username').value = '';
+        if(isGuest)  document.getElementById('ev-add-guest-name').value = '';
         document.getElementById('ev-add-army').value = '';
         document.getElementById('ev-add-faction').value = '';
-        showToast(`✦ ${username} added to the event!`);
+        showToast(`✦ ${displayName} added to the event!`);
         openEvent(event.id);
       }
     } catch(e){
