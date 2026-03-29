@@ -683,6 +683,13 @@ select option{background:#1a1208;}
           </select>
         </div>
       </div>
+      <div class="ff" style="margin-bottom:.9rem;">
+        <label>Army Points Limit</label>
+        <select id="ev-points">
+          <option value="0">No limit</option>
+          ${Array.from({length:11},(_,i)=>500+i*250).map(p=>`<option value="${p}"${p===2000?' selected':''}>${p.toLocaleString()} pts</option>`).join('')}
+        </select>
+      </div>
       <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.4rem;">
         <button class="subbtn" id="ev-submit-btn" style="width:100%;">⚔ Create Event</button>
         <button class="subbtn" id="ev-cancel-btn" style="width:100%;font-size:.75rem;border-color:rgba(201,168,76,.2);color:var(--text-muted);">Cancel</button>
@@ -2395,6 +2402,7 @@ function renderEventsList(){
             · ${pairingLabel(e.pairing_system)}
             · ${e.total_rounds} round${e.total_rounds!==1?'s':''}
             · ${e.participant_count} player${e.participant_count!==1?'s':''}
+            ${e.points_limit?`· ${e.points_limit.toLocaleString()} pts`:''}
             ${e.current_round>0?`· Round ${e.current_round}/${e.total_rounds}`:''}
           </div>
           ${e.description?`<div style="font-size:.8rem;color:var(--parchment-dark);font-style:italic;margin-top:.5rem;">${clean(e.description)}</div>`:''}
@@ -2450,6 +2458,7 @@ function renderEventDetail(data){
         <div style="font-size:.8rem;color:var(--text-muted);">
           By <strong style="color:var(--aged)">${clean(event.organiser_name)}</strong>
           · ${pairingLabel(event.pairing_system)} · ${event.total_rounds} rounds
+          ${event.points_limit?`· ${event.points_limit.toLocaleString()} pts limit`:''}
           ${event.current_round>0?`· Round ${event.current_round}/${event.total_rounds}`:'· Not started'}
         </div>
         ${event.description?`<div style="font-size:.82rem;font-style:italic;color:var(--parchment-dark);margin-top:.4rem;">${clean(event.description)}</div>`:''}
@@ -2805,13 +2814,14 @@ document.getElementById('ev-submit-btn')?.addEventListener('click', async () => 
   const desc   = document.getElementById('ev-desc').value.trim();
   const system = document.getElementById('ev-system').value;
   const rounds = document.getElementById('ev-rounds').value;
+  const points = parseInt(document.getElementById('ev-points').value)||0;
   if(!name){ showToast('⚠ Event name is required.',true); return; }
   const btn = document.getElementById('ev-submit-btn');
   btn.disabled = true; btn.textContent = '⏳ Creating…';
   try {
     const res = await fetch(`${API}/api/events`, {
       method:'POST', headers:apiHeaders(),
-      body:JSON.stringify({name, description:desc, pairing_system:system, total_rounds:+rounds})
+      body:JSON.stringify({name, description:desc, pairing_system:system, total_rounds:+rounds, points_limit:points})
     });
     const d = await res.json();
     if(!res.ok){ showToast(d.error||'Could not create event.',true); return; }

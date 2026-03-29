@@ -296,13 +296,14 @@ export default {
 
     // ── POST /api/events — create event ──
     if (path === '/api/events' && method === 'POST') {
-      const { name, description, pairing_system, total_rounds } = await request.json().catch(() => ({}));
+      const { name, description, pairing_system, total_rounds, points_limit } = await request.json().catch(() => ({}));
       if (!name) return err('Event name is required.', 400, origin, env);
       const rounds = Math.max(1, Math.min(10, parseInt(total_rounds)||3));
+      const pts    = Math.max(0, parseInt(points_limit)||0);
       const result = await env.DB.prepare(
-        `INSERT INTO events (organiser_id, name, description, pairing_system, total_rounds)
-         VALUES (?, ?, ?, ?, ?)`
-      ).bind(user.user_id, name, description||'', pairing_system||'swiss', rounds).run();
+        `INSERT INTO events (organiser_id, name, description, pairing_system, total_rounds, points_limit)
+         VALUES (?, ?, ?, ?, ?, ?)`
+      ).bind(user.user_id, name, description||'', pairing_system||'swiss', rounds, pts).run();
       return json({ ok: true, eventId: result.meta.last_row_id }, 201, origin, env);
     }
 
