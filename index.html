@@ -2643,6 +2643,27 @@ function renderEventDetail(data){
     </div>`;
   }
 
+  // Add participant panel — always visible to organiser and admin
+  if(isOrganiser || isPrivileged()){
+    html += `<div class="panel" style="margin-bottom:1.2rem;border-color:rgba(201,168,76,.2);">
+      <div class="ptitle">👤 Add Participant</div>
+      <p style="font-size:.82rem;color:var(--text-muted);font-style:italic;margin-bottom:.9rem;">Manually add a registered user to this event by username.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem;">
+        <div class="ff"><label>Username *</label><input type="text" id="ev-add-username" placeholder="Exact username…"></div>
+        <div class="ff"><label>Army Name</label><input type="text" id="ev-add-army" placeholder="e.g. The Iron Legion"></div>
+      </div>
+      <div class="ff" style="margin-bottom:.8rem;">
+        <label>Faction</label>
+        <select id="ev-add-faction">
+          <option value="">Select faction…</option>
+          ${Object.keys(FACTION_UNITS).map(f=>`<option>${f}</option>`).join('')}
+        </select>
+      </div>
+      <button class="subbtn" id="ev-add-participant-btn" style="font-size:.78rem;width:100%;">+ Add to Event</button>
+      <div id="ev-add-status" style="margin-top:.5rem;font-size:.8rem;"></div>
+    </div>`;
+  }
+
   // Rounds & pairings
   const rounds = Object.keys(byRound).sort((a,b)=>b-a);
   rounds.forEach(rnd => {
@@ -2878,6 +2899,44 @@ function wireEventDetailButtons(event, participants){
     if(!res.ok){ showToast('⚠ Could not reopen registration.',true); return; }
     showToast('✦ Registration reopened. Players can now join again.');
     openEvent(event.id);
+  });
+
+  // Add participant manually
+  document.getElementById('ev-add-participant-btn')?.addEventListener('click', async () => {
+    const username  = document.getElementById('ev-add-username')?.value.trim();
+    const army_name = document.getElementById('ev-add-army')?.value.trim()||'';
+    const faction   = document.getElementById('ev-add-faction')?.value||'';
+    const statusEl  = document.getElementById('ev-add-status');
+
+    if(!username){ showToast('⚠ Username is required.',true); return; }
+
+    const btn = document.getElementById('ev-add-participant-btn');
+    btn.disabled = true; btn.textContent = '⏳ Adding…';
+    if(statusEl) statusEl.textContent = '';
+
+    try {
+      const res = await fetch(`${API}/api/events/${event.id}/add-participant`, {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify({ username, army_name, faction })
+      });
+      const d = await res.json();
+      if(!res.ok){
+        if(statusEl){ statusEl.textContent = d.error || 'Could not add participant.'; statusEl.style.color='#d46060'; }
+        showToast(d.error || '⚠ Could not add participant.', true);
+      } else {
+        if(statusEl){ statusEl.textContent = `✦ ${username} added successfully.`; statusEl.style.color='#6aaf6a'; }
+        document.getElementById('ev-add-username').value = '';
+        document.getElementById('ev-add-army').value = '';
+        document.getElementById('ev-add-faction').value = '';
+        showToast(`✦ ${username} added to the event!`);
+        openEvent(event.id);
+      }
+    } catch(e){
+      showToast('⚠ Could not add participant.', true);
+    } finally {
+      btn.disabled = false; btn.textContent = '+ Add to Event';
+    }
   });
 
   // Close registration
