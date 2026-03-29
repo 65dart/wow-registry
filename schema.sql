@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS event_participants (
   faction    TEXT    DEFAULT '',
   army_name  TEXT    DEFAULT '',
   units      TEXT    DEFAULT '[]',  -- JSON array of unit objects
+  battle_points INTEGER NOT NULL DEFAULT 0,  -- cumulative battle points scored
   wins       INTEGER NOT NULL DEFAULT 0,
   losses     INTEGER NOT NULL DEFAULT 0,
   draws      INTEGER NOT NULL DEFAULT 0,
@@ -91,13 +92,15 @@ CREATE TABLE IF NOT EXISTS event_pairings (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   event_id      INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
   round         INTEGER NOT NULL,
-  player1_id    INTEGER NOT NULL REFERENCES users(id),
-  player2_id    INTEGER,                              -- NULL = bye
+  player1_id    INTEGER NOT NULL,    -- references event_participants.id
+  player2_id    INTEGER,             -- references event_participants.id, NULL = bye
   player1_name  TEXT    NOT NULL,
   player2_name  TEXT    DEFAULT 'BYE',
   result        TEXT    DEFAULT NULL,                 -- 'player1','player2','draw',NULL=pending
   player1_submitted TEXT DEFAULT NULL,               -- submitted result from p1
   player2_submitted TEXT DEFAULT NULL,               -- submitted result from p2
+  player1_points    INTEGER DEFAULT NULL,            -- battle points scored by p1
+  player2_points    INTEGER DEFAULT NULL,            -- battle points scored by p2
   approved      INTEGER NOT NULL DEFAULT 0,          -- 0=pending, 1=approved
   created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
 );

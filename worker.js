@@ -678,7 +678,7 @@ export default {
     const resultMatch = path.match(/^\/api\/events\/(\d+)\/result$/);
     if (resultMatch && method === 'POST') {
       const eid = parseInt(resultMatch[1]);
-      const { pairing_id, result: res } = await request.json().catch(() => ({}));
+      const { pairing_id, result: res, battle_points } = await request.json().catch(() => ({}));
       if (!pairing_id || !res) return err('pairing_id and result required.', 400, origin, env);
 
       const pairing = await env.DB.prepare('SELECT * FROM event_pairings WHERE id = ? AND event_id = ?').bind(pairing_id, eid).first();
@@ -692,9 +692,9 @@ export default {
 
       // Store submission — player1_id/player2_id now reference participant row id
       if (myPart && pairing.player1_id === myPart.id) {
-        await env.DB.prepare('UPDATE event_pairings SET player1_submitted=? WHERE id=?').bind(res, pairing_id).run();
+        await env.DB.prepare('UPDATE event_pairings SET player1_submitted=?, player1_points=? WHERE id=?').bind(res, battle_points||null, pairing_id).run();
       } else if (myPart && pairing.player2_id === myPart.id) {
-        await env.DB.prepare('UPDATE event_pairings SET player2_submitted=? WHERE id=?').bind(res, pairing_id).run();
+        await env.DB.prepare('UPDATE event_pairings SET player2_submitted=?, player2_points=? WHERE id=?').bind(res, battle_points||null, pairing_id).run();
       } else {
         return err('You are not a participant in this pairing.', 403, origin, env);
       }
@@ -711,14 +711,14 @@ export default {
         // Update standings
         const evt = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(eid).first();
         if (agreedResult === 'player1') {
-          await env.DB.prepare(`UPDATE event_participants SET wins=wins+1, points=points+3 WHERE id=?`).bind(pairing.player1_id).run();
-          await env.DB.prepare(`UPDATE event_participants SET losses=losses+1 WHERE id=?`).bind(pairing.player2_id).run();
+          await env.DB.prepare(`UPDATE event_participants SET wins=wins+1, points=points+3, battle_points=battle_points+? WHERE id=?`).bind(updated.player1_points||0, pairing.player1_id).run();
+          await env.DB.prepare(`UPDATE event_participants SET losses=losses+1, battle_points=battle_points+? WHERE id=?`).bind(updated.player2_points||0, pairing.player2_id).run();
         } else if (agreedResult === 'player2') {
-          await env.DB.prepare(`UPDATE event_participants SET losses=losses+1 WHERE id=?`).bind(pairing.player1_id).run();
-          await env.DB.prepare(`UPDATE event_participants SET wins=wins+1, points=points+3 WHERE id=?`).bind(pairing.player2_id).run();
+          await env.DB.prepare(`UPDATE event_participants SET losses=losses+1, battle_points=battle_points+? WHERE id=?`).bind(updated.player1_points||0, pairing.player1_id).run();
+          await env.DB.prepare(`UPDATE event_participants SET wins=wins+1, points=points+3, battle_points=battle_points+? WHERE id=?`).bind(updated.player2_points||0, pairing.player2_id).run();
         } else {
-          await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1 WHERE id=?`).bind(pairing.player1_id).run();
-          await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1 WHERE id=?`).bind(pairing.player2_id).run();
+          await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1, battle_points=battle_points+? WHERE id=?`).bind(updated.player1_points||0, pairing.player1_id).run();
+          await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1, battle_points=battle_points+? WHERE id=?`).bind(updated.player2_points||0, pairing.player2_id).run();
         }
 
         // Save army records to main armies table
@@ -750,25 +750,28 @@ export default {
       if (evt.organiser_id !== user.user_id && !isPrivilegedApr)
         return err('Only the organiser can approve results.', 403, origin, env);
 
-      const { result: res } = await request.json().catch(() => ({}));
+      const { result: res, player1_points, player2_points } = await request.json().catch(() => ({}));
       if (!['player1','player2','draw'].includes(res)) return err('Invalid result.', 400, origin, env);
 
       const pairing = await env.DB.prepare('SELECT * FROM event_pairings WHERE id = ? AND event_id = ?').bind(pid, eid).first();
       if (!pairing) return err('Pairing not found.', 404, origin, env);
       if (pairing.approved) return err('Result already approved.', 400, origin, env);
 
-      await env.DB.prepare('UPDATE event_pairings SET result=?, approved=1 WHERE id=?').bind(res, pid).run();
+      await env.DB.prepare('UPDATE event_pairings SET result=?, approved=1, player1_points=?, player2_points=? WHERE id=?')
+        .bind(res, player1_points||pairing.player1_points||null, player2_points||pairing.player2_points||null, pid).run();
 
       // Update standings — player1_id/player2_id reference participant row id
+      const p1pts = player1_points || pairing.player1_points || 0;
+      const p2pts = player2_points || pairing.player2_points || 0;
       if (res === 'player1') {
-        await env.DB.prepare(`UPDATE event_participants SET wins=wins+1, points=points+3 WHERE id=?`).bind(pairing.player1_id).run();
-        await env.DB.prepare(`UPDATE event_participants SET losses=losses+1 WHERE id=?`).bind(pairing.player2_id).run();
+        await env.DB.prepare(`UPDATE event_participants SET wins=wins+1, points=points+3, battle_points=battle_points+? WHERE id=?`).bind(p1pts, pairing.player1_id).run();
+        await env.DB.prepare(`UPDATE event_participants SET losses=losses+1, battle_points=battle_points+? WHERE id=?`).bind(p2pts, pairing.player2_id).run();
       } else if (res === 'player2') {
-        await env.DB.prepare(`UPDATE event_participants SET losses=losses+1 WHERE id=?`).bind(pairing.player1_id).run();
-        await env.DB.prepare(`UPDATE event_participants SET wins=wins+1, points=points+3 WHERE id=?`).bind(pairing.player2_id).run();
+        await env.DB.prepare(`UPDATE event_participants SET losses=losses+1, battle_points=battle_points+? WHERE id=?`).bind(p1pts, pairing.player1_id).run();
+        await env.DB.prepare(`UPDATE event_participants SET wins=wins+1, points=points+3, battle_points=battle_points+? WHERE id=?`).bind(p2pts, pairing.player2_id).run();
       } else {
-        await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1 WHERE id=?`).bind(pairing.player1_id).run();
-        await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1 WHERE id=?`).bind(pairing.player2_id).run();
+        await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1, battle_points=battle_points+? WHERE id=?`).bind(p1pts, pairing.player1_id).run();
+        await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1, battle_points=battle_points+? WHERE id=?`).bind(p2pts, pairing.player2_id).run();
       }
 
       // Save army records to main armies table

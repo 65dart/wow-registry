@@ -2631,7 +2631,8 @@ function renderEventDetail(data){
           <th style="padding:.4rem .3rem;text-align:center;">W</th>
           <th style="padding:.4rem .3rem;text-align:center;">D</th>
           <th style="padding:.4rem .3rem;text-align:center;">L</th>
-          <th style="padding:.4rem .3rem;text-align:center;">Pts</th>
+          <th style="padding:.4rem .3rem;text-align:center;">Battle Pts</th>
+          <th style="padding:.4rem .3rem;text-align:center;">Tourney Pts</th>
         </tr></thead>
         <tbody>
           ${participants.map((p,i) => `<tr style="border-bottom:1px solid rgba(201,168,76,.07);">
@@ -2641,6 +2642,7 @@ function renderEventDetail(data){
             <td style="padding:.45rem .3rem;text-align:center;color:#6aaf6a;">${p.wins}</td>
             <td style="padding:.45rem .3rem;text-align:center;color:var(--gold);">${p.draws}</td>
             <td style="padding:.45rem .3rem;text-align:center;color:#d46060;">${p.losses}</td>
+            <td style="padding:.45rem .3rem;text-align:center;color:var(--parchment);">${p.battle_points!=null?p.battle_points:'—'}</td>
             <td style="padding:.45rem .3rem;text-align:center;font-family:'Cinzel',serif;color:var(--aged);font-weight:700;">${p.points}</td>
           </tr>`).join('')}
         </tbody>
@@ -2713,9 +2715,11 @@ function renderEventDetail(data){
         let resultDisplay = '';
         if(p.approved){
           const winner = p.result === 'player1' ? p.player1_name : p.result === 'player2' ? p.player2_name : 'Draw';
+          const ptsStr = (p.player1_points != null || p.player2_points != null)
+            ? ` <span style="font-size:.72rem;color:var(--text-muted);">(${p.player1_points??'—'} – ${p.player2_points??'—'} pts)</span>` : '';
           resultDisplay = p.result === 'draw'
-            ? `<span style="color:var(--gold);font-size:.78rem;">Draw</span>`
-            : `<span style="color:#6aaf6a;font-size:.78rem;">Winner: ${clean(winner)}</span>`;
+            ? `<span style="color:var(--gold);font-size:.78rem;">Draw${ptsStr}</span>`
+            : `<span style="color:#6aaf6a;font-size:.78rem;">Winner: ${clean(winner)}${ptsStr}</span>`;
         } else if(isBye){
           resultDisplay = `<span style="color:var(--text-muted);font-size:.78rem;">BYE</span>`;
         } else {
@@ -2726,10 +2730,17 @@ function renderEventDetail(data){
         let submitHtml = '';
         if(myPairing && pending && !myResult){
           const isp1 = p.player1_name === authUser;
-          submitHtml = `<div style="display:flex;gap:.4rem;margin-top:.5rem;">
-            <button class="subbtn ev-submit-result" data-pid="${p.id}" data-result="${isp1?'player1':'player2'}" style="font-size:.68rem;padding:.3rem .6rem;border-color:#6aaf6a;color:#6aaf6a;">I Won</button>
-            <button class="subbtn ev-submit-result" data-pid="${p.id}" data-result="draw" style="font-size:.68rem;padding:.3rem .6rem;border-color:var(--gold);color:var(--gold);">Draw</button>
-            <button class="subbtn ev-submit-result" data-pid="${p.id}" data-result="${isp1?'player2':'player1'}" style="font-size:.68rem;padding:.3rem .6rem;border-color:#d46060;color:#d46060;">I Lost</button>
+          submitHtml = `<div style="margin-top:.5rem;">
+            <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;flex-wrap:wrap;">
+              <span style="font-size:.75rem;color:var(--text-muted);">Your battle points:</span>
+              <input type="number" class="ev-bp-input" data-pid="${p.id}" min="0" max="9999" placeholder="e.g. 14"
+                style="width:80px;background:rgba(0,0,0,.25);border:1px solid rgba(201,168,76,.2);color:var(--parchment);padding:.25rem .45rem;font-size:.82rem;border-radius:2px;">
+            </div>
+            <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
+              <button class="subbtn ev-submit-result" data-pid="${p.id}" data-result="${isp1?'player1':'player2'}" style="font-size:.68rem;padding:.3rem .6rem;border-color:#6aaf6a;color:#6aaf6a;">I Won</button>
+              <button class="subbtn ev-submit-result" data-pid="${p.id}" data-result="draw" style="font-size:.68rem;padding:.3rem .6rem;border-color:var(--gold);color:var(--gold);">Draw</button>
+              <button class="subbtn ev-submit-result" data-pid="${p.id}" data-result="${isp1?'player2':'player1'}" style="font-size:.68rem;padding:.3rem .6rem;border-color:#d46060;color:#d46060;">I Lost</button>
+            </div>
           </div>`;
         } else if(myResult && pending){
           submitHtml = `<div style="font-size:.72rem;color:var(--text-muted);font-style:italic;margin-top:.4rem;">You submitted: <strong>${myResult === 'draw' ? 'Draw' : (myResult === (p.player1_name===authUser?'player1':'player2') ? 'Win' : 'Loss')}</strong> — awaiting organiser approval</div>`;
@@ -2775,15 +2786,27 @@ function renderEventDetail(data){
                 ? `<span style="font-size:.7rem;color:var(--text-muted);font-style:italic;">Waiting for other player…</span>`
                 : '';
 
+          // Show submitted points if available
+          const p1pts = p.player1_points != null ? `<span style="font-size:.7rem;color:var(--text-muted);margin-left:.3rem;">(${p.player1_points} pts)</span>` : '';
+          const p2pts = p.player2_points != null ? `<span style="font-size:.7rem;color:var(--text-muted);margin-left:.3rem;">(${p.player2_points} pts)</span>` : '';
+
           approveHtml = `<div style="margin-top:.6rem;">
             <div style="display:flex;gap:.35rem;align-items:center;margin-bottom:.4rem;flex-wrap:wrap;">
               <span style="font-size:.68rem;color:var(--text-muted);font-family:'Cinzel',serif;letter-spacing:.06em;">APPROVE:</span>
               ${agreeNote}
             </div>
+            <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.5rem;flex-wrap:wrap;">
+              <span style="font-size:.75rem;color:var(--text-muted);">${clean(p.player1_name)} pts:</span>
+              <input type="number" class="ev-org-bp1" data-pid="${p.id}" min="0" max="9999" placeholder="—" value="${p.player1_points!=null?p.player1_points:''}"
+                style="width:70px;background:rgba(0,0,0,.25);border:1px solid rgba(201,168,76,.2);color:var(--parchment);padding:.22rem .4rem;font-size:.8rem;border-radius:2px;">
+              <span style="font-size:.75rem;color:var(--text-muted);margin-left:.25rem;">${clean(p.player2_name)} pts:</span>
+              <input type="number" class="ev-org-bp2" data-pid="${p.id}" min="0" max="9999" placeholder="—" value="${p.player2_points!=null?p.player2_points:''}"
+                style="width:70px;background:rgba(0,0,0,.25);border:1px solid rgba(201,168,76,.2);color:var(--parchment);padding:.22rem .4rem;font-size:.8rem;border-radius:2px;">
+            </div>
             <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
               <button class="subbtn ev-approve-result" data-pid="${p.id}" data-result="player1"
                 style="font-size:.68rem;padding:.3rem .7rem;${btnHighlight('player1')}">
-                ${clean(p.player1_name)} Wins${subIndicator('player1')}
+                ${clean(p.player1_name)} Wins${subIndicator('player1')}${p1pts}
               </button>
               <button class="subbtn ev-approve-result" data-pid="${p.id}" data-result="draw"
                 style="font-size:.68rem;padding:.3rem .7rem;${btnHighlight('draw')}">
@@ -2791,7 +2814,7 @@ function renderEventDetail(data){
               </button>
               <button class="subbtn ev-approve-result" data-pid="${p.id}" data-result="player2"
                 style="font-size:.68rem;padding:.3rem .7rem;${btnHighlight('player2')}">
-                ${clean(p.player2_name)} Wins${subIndicator('player2')}
+                ${clean(p.player2_name)} Wins${subIndicator('player2')}${p2pts}
               </button>
             </div>
           </div>`;
@@ -3085,8 +3108,12 @@ function wireEventDetailButtons(event, participants){
     btn.addEventListener('click', async function(){
       const pid = +this.dataset.pid;
       const result = this.dataset.result;
+      // Read battle points from the input in same pairing block
+      const bpInput = document.querySelector(`.ev-bp-input[data-pid="${pid}"]`);
+      const battle_points = bpInput && bpInput.value ? parseInt(bpInput.value) : null;
       const res = await fetch(`${API}/api/events/${event.id}/result`, {
-        method:'POST', headers:apiHeaders(), body:JSON.stringify({pairing_id:pid, result})
+        method:'POST', headers:apiHeaders(),
+        body:JSON.stringify({pairing_id:pid, result, battle_points})
       });
       if(!res.ok){ showToast('Could not submit result.',true); return; }
       const data = await res.json();
@@ -3104,8 +3131,14 @@ function wireEventDetailButtons(event, participants){
     btn.addEventListener('click', async function(){
       const pid = +this.dataset.pid;
       const result = this.dataset.result;
+      // Read organiser-entered battle points
+      const bp1Input = document.querySelector(`.ev-org-bp1[data-pid="${pid}"]`);
+      const bp2Input = document.querySelector(`.ev-org-bp2[data-pid="${pid}"]`);
+      const player1_points = bp1Input && bp1Input.value ? parseInt(bp1Input.value) : null;
+      const player2_points = bp2Input && bp2Input.value ? parseInt(bp2Input.value) : null;
       const res = await fetch(`${API}/api/events/${event.id}/result/${pid}`, {
-        method:'PUT', headers:apiHeaders(), body:JSON.stringify({result})
+        method:'PUT', headers:apiHeaders(),
+        body:JSON.stringify({result, player1_points, player2_points})
       });
       if(!res.ok){ showToast('Could not approve result.',true); return; }
       showToast('✦ Result approved.');
