@@ -2442,7 +2442,7 @@ function renderEventDetail(data){
         ${event.status==='open' && !isParticipant ? `<button class="subbtn" id="ev-join-btn" style="font-size:.75rem;padding:.4rem .9rem;">Join Event</button>` : ''}
         ${event.status==='open' && isParticipant && !isOrganiser ? `<button class="subbtn" id="ev-leave-btn" style="font-size:.75rem;padding:.4rem .9rem;border-color:rgba(180,60,60,.4);color:#d46060;">Leave</button>` : ''}
         ${isOrganiser && event.status==='open' ? `<button class="subbtn" id="ev-close-reg-btn" style="font-size:.75rem;padding:.4rem .9rem;">Close Registration</button>` : ''}
-        ${isOrganiser && event.status==='complete' ? `<button class="subbtn" id="ev-delete-btn" style="font-size:.75rem;padding:.4rem .9rem;border-color:rgba(180,60,60,.4);color:#d46060;">Delete Event</button>` : ''}
+        ${(isOrganiser || isPrivileged()) ? `<button class="subbtn" id="ev-delete-btn" style="font-size:.75rem;padding:.4rem .9rem;border-color:rgba(180,60,60,.4);color:#d46060;">Delete Event</button>` : ''}
       </div>
     </div>`;
 

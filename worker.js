@@ -533,13 +533,16 @@ export default {
       return json({ ok: true }, 200, origin, env);
     }
 
-    // ── DELETE /api/events/:id — delete event (organiser only) ──
+    // ── DELETE /api/events/:id — delete event (organiser or admin) ──
     const evtDelMatch = path.match(/^\/api\/events\/(\d+)\/delete$/);
     if (evtDelMatch && method === 'DELETE') {
       const eid = parseInt(evtDelMatch[1]);
       const evt = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(eid).first();
       if (!evt) return err('Event not found.', 404, origin, env);
-      if (evt.organiser_id !== user.user_id) return err('Only the organiser can delete this event.', 403, origin, env);
+      const PRIVILEGED = ['admin','administrator','mod','moderator'];
+      const isPrivileged = PRIVILEGED.includes((user.username||'').toLowerCase());
+      if (evt.organiser_id !== user.user_id && !isPrivileged)
+        return err('Only the organiser or an admin can delete this event.', 403, origin, env);
       await env.DB.prepare('DELETE FROM events WHERE id = ?').bind(eid).run();
       return json({ ok: true }, 200, origin, env);
     }
