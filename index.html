@@ -2568,7 +2568,7 @@ function renderEventDetail(data){
   const isOrganiser = event.organiser_id === authUserId || event.organiser_name === authUser;
   const isParticipant = participants.some(p => p.user_id === authUserId || p.username === authUser);
   const myEntry = participants.find(p => p.username === authUser);
-  const canStartRound = isOrganiser && event.status !== 'complete' &&
+  const canStartRound = (isOrganiser || isPrivileged()) && event.status !== 'complete' &&
     (event.current_round === 0 || allRoundApproved(pairings, event.current_round)) &&
     event.current_round < event.total_rounds;
 

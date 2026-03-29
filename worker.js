@@ -89,63 +89,62 @@ async function createArmyRecords(env, evt, pairing, result) {
   try {
     const today = new Date().toISOString().split('T')[0];
 
-    // Fetch participant data for both players
+    // Fetch participant data for both players using participant row id
     const p1 = await env.DB.prepare(
-      'SELECT * FROM event_participants WHERE event_id = ? AND user_id = ?'
-    ).bind(evt.id, pairing.player1_id).first();
+      'SELECT * FROM event_participants WHERE id = ?'
+    ).bind(pairing.player1_id).first();
     const p2 = pairing.player2_id ? await env.DB.prepare(
-      'SELECT * FROM event_participants WHERE event_id = ? AND user_id = ?'
-    ).bind(evt.id, pairing.player2_id).first() : null;
+      'SELECT * FROM event_participants WHERE id = ?'
+    ).bind(pairing.player2_id).first() : null;
 
     // Determine results for each player
     const p1result = result === 'player1' ? 'Win' : result === 'player2' ? 'Loss' : 'Draw';
     const p2result = result === 'player2' ? 'Win' : result === 'player1' ? 'Loss' : 'Draw';
 
-    // Build army record for player 1
-    if (p1) {
-      const p1units = (() => { try { return JSON.parse(p1.units||'[]'); } catch(e){ return []; } })();
-      const army1 = {
-        player:    p1.username,
-        name:      p1.army_name || `${p1.username}'s Army`,
-        faction:   p1.faction   || '',
-        points:    evt.points_limit || 0,
-        oppPoints: evt.points_limit || 0,
-        result:    p1result,
-        opponent:  p2 ? p2.faction : '',
-        event:     evt.name,
-        notes:     `Round ${pairing.round} — ${evt.name}`,
-        units:     p1units,
-        oppUnits:  [],
-        date:      today,
-        likes:     0,
-      };
-      await env.DB.prepare(
-        'INSERT INTO armies (user_id, data) VALUES (?, ?)'
-      ).bind(pairing.player1_id, JSON.stringify(army1)).run();
-    }
+      // Only create army records for registered users (guests have no user_id)
+      if (p1 && p1.user_id) {
+        const p1units = (() => { try { return JSON.parse(p1.units||'[]'); } catch(e){ return []; } })();
+        const army1 = {
+          player:    p1.username,
+          name:      p1.army_name || `${p1.username}'s Army`,
+          faction:   p1.faction   || '',
+          points:    evt.points_limit || 0,
+          oppPoints: evt.points_limit || 0,
+          result:    p1result,
+          opponent:  p2 ? p2.faction : '',
+          event:     evt.name,
+          notes:     `Round ${pairing.round} — ${evt.name}`,
+          units:     p1units,
+          oppUnits:  [],
+          date:      today,
+          likes:     0,
+        };
+        await env.DB.prepare(
+          'INSERT INTO armies (user_id, data) VALUES (?, ?)'
+        ).bind(p1.user_id, JSON.stringify(army1)).run();
+      }
 
-    // Build army record for player 2
-    if (p2 && pairing.player2_id) {
-      const p2units = (() => { try { return JSON.parse(p2.units||'[]'); } catch(e){ return []; } })();
-      const army2 = {
-        player:    p2.username,
-        name:      p2.army_name || `${p2.username}'s Army`,
-        faction:   p2.faction   || '',
-        points:    evt.points_limit || 0,
-        oppPoints: evt.points_limit || 0,
-        result:    p2result,
-        opponent:  p1 ? p1.faction : '',
-        event:     evt.name,
-        notes:     `Round ${pairing.round} — ${evt.name}`,
-        units:     p2units,
-        oppUnits:  [],
-        date:      today,
-        likes:     0,
-      };
-      await env.DB.prepare(
-        'INSERT INTO armies (user_id, data) VALUES (?, ?)'
-      ).bind(pairing.player2_id, JSON.stringify(army2)).run();
-    }
+      if (p2 && p2.user_id) {
+        const p2units = (() => { try { return JSON.parse(p2.units||'[]'); } catch(e){ return []; } })();
+        const army2 = {
+          player:    p2.username,
+          name:      p2.army_name || `${p2.username}'s Army`,
+          faction:   p2.faction   || '',
+          points:    evt.points_limit || 0,
+          oppPoints: evt.points_limit || 0,
+          result:    p2result,
+          opponent:  p1 ? p1.faction : '',
+          event:     evt.name,
+          notes:     `Round ${pairing.round} — ${evt.name}`,
+          units:     p2units,
+          oppUnits:  [],
+          date:      today,
+          likes:     0,
+        };
+        await env.DB.prepare(
+          'INSERT INTO armies (user_id, data) VALUES (?, ?)'
+        ).bind(p2.user_id, JSON.stringify(army2)).run();
+      }
   } catch(e) {
     // Non-fatal — don't let army record creation failure break the result approval
     console.error('createArmyRecords error:', e);
@@ -573,7 +572,10 @@ export default {
       const eid = parseInt(roundMatch[1]);
       const evt = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(eid).first();
       if (!evt) return err('Event not found.', 404, origin, env);
-      if (evt.organiser_id !== user.user_id) return err('Only the organiser can generate pairings.', 403, origin, env);
+      const PRIVILEGED_RND = ['admin','administrator','mod','moderator'];
+      const isPrivilegedRnd = PRIVILEGED_RND.includes((user.username||'').toLowerCase());
+      if (evt.organiser_id !== user.user_id && !isPrivilegedRnd)
+        return err('Only the organiser can generate pairings.', 403, origin, env);
 
       // Check all results from previous round are approved
       if (evt.current_round > 0) {
@@ -604,65 +606,64 @@ export default {
         pairs = manualPairings;
       } else if (system === 'swiss' || system === 'elimination') {
         // Swiss: pair by similar points, avoid rematches
+        // Use participant row .id (not .user_id) as the unique key — supports NULL guest user_ids
         const played = new Set();
         if (nextRound > 1) {
           const prev = await env.DB.prepare(
             `SELECT player1_id, player2_id FROM event_pairings WHERE event_id = ?`
           ).bind(eid).all();
           (prev.results||[]).forEach(p => {
-            if (p.player2_id) played.add(`${Math.min(p.player1_id,p.player2_id)}_${Math.max(p.player1_id,p.player2_id)}`);
+            if (p.player1_id && p.player2_id)
+              played.add(`${Math.min(p.player1_id,p.player2_id)}_${Math.max(p.player1_id,p.player2_id)}`);
           });
         }
         const pool = [...parts];
         const used = new Set();
         for (let i = 0; i < pool.length; i++) {
-          if (used.has(pool[i].user_id)) continue;
+          if (used.has(pool[i].id)) continue;
           let opponent = null;
           for (let j = i+1; j < pool.length; j++) {
-            if (used.has(pool[j].user_id)) continue;
-            const key = `${Math.min(pool[i].user_id,pool[j].user_id)}_${Math.max(pool[i].user_id,pool[j].user_id)}`;
+            if (used.has(pool[j].id)) continue;
+            const key = `${Math.min(pool[i].id,pool[j].id)}_${Math.max(pool[i].id,pool[j].id)}`;
             if (!played.has(key)) { opponent = pool[j]; break; }
           }
           if (!opponent) {
-            // find any unpaired
             for (let j = i+1; j < pool.length; j++) {
-              if (!used.has(pool[j].user_id)) { opponent = pool[j]; break; }
+              if (!used.has(pool[j].id)) { opponent = pool[j]; break; }
             }
           }
           if (opponent) {
             pairs.push({ p1: pool[i], p2: opponent });
-            used.add(pool[i].user_id); used.add(opponent.user_id);
+            used.add(pool[i].id); used.add(opponent.id);
           } else {
             // bye
             pairs.push({ p1: pool[i], p2: null });
-            used.add(pool[i].user_id);
+            used.add(pool[i].id);
           }
         }
       } else if (system === 'round_robin') {
-        // Simple sequential round robin
         for (let i = 0; i < parts.length - 1; i += 2) {
           pairs.push({ p1: parts[i], p2: parts[i+1] || null });
         }
         if (parts.length % 2 !== 0) pairs.push({ p1: parts[parts.length-1], p2: null });
       } else {
-        // Manual — return empty pairings for organiser to fill
         pairs = parts.map((p,i) => ({ p1: p, p2: parts[i+1]||null }));
       }
 
-      // Insert pairings
+      // Insert pairings — use participant row id as player references, not user_id
       for (const pair of pairs) {
         await env.DB.prepare(
           `INSERT INTO event_pairings (event_id, round, player1_id, player2_id, player1_name, player2_name)
            VALUES (?, ?, ?, ?, ?, ?)`
-        ).bind(eid, nextRound, pair.p1.user_id, pair.p2?.user_id||null, pair.p1.username, pair.p2?.username||'BYE').run();
+        ).bind(eid, nextRound, pair.p1.id, pair.p2?.id||null, pair.p1.username, pair.p2?.username||'BYE').run();
         // Auto-approve byes
         if (!pair.p2) {
           await env.DB.prepare(
             `UPDATE event_pairings SET result='player1', approved=1 WHERE event_id=? AND round=? AND player1_id=? AND player2_id IS NULL`
-          ).bind(eid, nextRound, pair.p1.user_id).run();
+          ).bind(eid, nextRound, pair.p1.id).run();
           await env.DB.prepare(
-            `UPDATE event_participants SET wins=wins+1, points=points+3 WHERE event_id=? AND user_id=?`
-          ).bind(eid, pair.p1.user_id).run();
+            `UPDATE event_participants SET wins=wins+1, points=points+3 WHERE id=?`
+          ).bind(pair.p1.id).run();
         }
       }
 
@@ -681,10 +682,15 @@ export default {
       if (!pairing) return err('Pairing not found.', 404, origin, env);
       if (pairing.approved) return err('Result already approved.', 400, origin, env);
 
-      // Store submission
-      if (pairing.player1_id === user.user_id) {
+      // Look up current user's participant row id
+      const myPart = await env.DB.prepare(
+        'SELECT id FROM event_participants WHERE event_id = ? AND user_id = ?'
+      ).bind(eid, user.user_id).first();
+
+      // Store submission — player1_id/player2_id now reference participant row id
+      if (myPart && pairing.player1_id === myPart.id) {
         await env.DB.prepare('UPDATE event_pairings SET player1_submitted=? WHERE id=?').bind(res, pairing_id).run();
-      } else if (pairing.player2_id === user.user_id) {
+      } else if (myPart && pairing.player2_id === myPart.id) {
         await env.DB.prepare('UPDATE event_pairings SET player2_submitted=? WHERE id=?').bind(res, pairing_id).run();
       } else {
         return err('You are not a participant in this pairing.', 403, origin, env);
@@ -702,14 +708,14 @@ export default {
         // Update standings
         const evt = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(eid).first();
         if (agreedResult === 'player1') {
-          await env.DB.prepare(`UPDATE event_participants SET wins=wins+1, points=points+3 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player1_id).run();
-          await env.DB.prepare(`UPDATE event_participants SET losses=losses+1 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player2_id).run();
+          await env.DB.prepare(`UPDATE event_participants SET wins=wins+1, points=points+3 WHERE id=?`).bind(pairing.player1_id).run();
+          await env.DB.prepare(`UPDATE event_participants SET losses=losses+1 WHERE id=?`).bind(pairing.player2_id).run();
         } else if (agreedResult === 'player2') {
-          await env.DB.prepare(`UPDATE event_participants SET losses=losses+1 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player1_id).run();
-          await env.DB.prepare(`UPDATE event_participants SET wins=wins+1, points=points+3 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player2_id).run();
+          await env.DB.prepare(`UPDATE event_participants SET losses=losses+1 WHERE id=?`).bind(pairing.player1_id).run();
+          await env.DB.prepare(`UPDATE event_participants SET wins=wins+1, points=points+3 WHERE id=?`).bind(pairing.player2_id).run();
         } else {
-          await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player1_id).run();
-          await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player2_id).run();
+          await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1 WHERE id=?`).bind(pairing.player1_id).run();
+          await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1 WHERE id=?`).bind(pairing.player2_id).run();
         }
 
         // Save army records to main armies table
@@ -736,7 +742,10 @@ export default {
       const pid = parseInt(approveMatch[2]);
       const evt = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(eid).first();
       if (!evt) return err('Event not found.', 404, origin, env);
-      if (evt.organiser_id !== user.user_id) return err('Only the organiser can approve results.', 403, origin, env);
+      const PRIVILEGED_APR = ['admin','administrator','mod','moderator'];
+      const isPrivilegedApr = PRIVILEGED_APR.includes((user.username||'').toLowerCase());
+      if (evt.organiser_id !== user.user_id && !isPrivilegedApr)
+        return err('Only the organiser can approve results.', 403, origin, env);
 
       const { result: res } = await request.json().catch(() => ({}));
       if (!['player1','player2','draw'].includes(res)) return err('Invalid result.', 400, origin, env);
@@ -747,16 +756,16 @@ export default {
 
       await env.DB.prepare('UPDATE event_pairings SET result=?, approved=1 WHERE id=?').bind(res, pid).run();
 
-      // Update standings
+      // Update standings — player1_id/player2_id reference participant row id
       if (res === 'player1') {
-        await env.DB.prepare(`UPDATE event_participants SET wins=wins+1, points=points+3 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player1_id).run();
-        await env.DB.prepare(`UPDATE event_participants SET losses=losses+1 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player2_id).run();
+        await env.DB.prepare(`UPDATE event_participants SET wins=wins+1, points=points+3 WHERE id=?`).bind(pairing.player1_id).run();
+        await env.DB.prepare(`UPDATE event_participants SET losses=losses+1 WHERE id=?`).bind(pairing.player2_id).run();
       } else if (res === 'player2') {
-        await env.DB.prepare(`UPDATE event_participants SET losses=losses+1 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player1_id).run();
-        await env.DB.prepare(`UPDATE event_participants SET wins=wins+1, points=points+3 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player2_id).run();
+        await env.DB.prepare(`UPDATE event_participants SET losses=losses+1 WHERE id=?`).bind(pairing.player1_id).run();
+        await env.DB.prepare(`UPDATE event_participants SET wins=wins+1, points=points+3 WHERE id=?`).bind(pairing.player2_id).run();
       } else {
-        await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player1_id).run();
-        await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player2_id).run();
+        await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1 WHERE id=?`).bind(pairing.player1_id).run();
+        await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1 WHERE id=?`).bind(pairing.player2_id).run();
       }
 
       // Save army records to main armies table
