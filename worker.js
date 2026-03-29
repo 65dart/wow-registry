@@ -279,6 +279,271 @@ export default {
       return json({ username: user.username, email: user.email, userId: user.user_id }, 200, origin, env);
     }
 
+    // ══════════════════════════════════════════
+    //  EVENTS
+    // ══════════════════════════════════════════
+
+    // ── GET /api/events — list all events ──
+    if (path === '/api/events' && method === 'GET') {
+      const rows = await env.DB.prepare(
+        `SELECT e.*, u.username as organiser_name,
+          (SELECT COUNT(*) FROM event_participants p WHERE p.event_id = e.id) as participant_count
+         FROM events e JOIN users u ON e.organiser_id = u.id
+         ORDER BY e.created_at DESC`
+      ).all();
+      return json({ events: rows.results || [] }, 200, origin, env);
+    }
+
+    // ── POST /api/events — create event ──
+    if (path === '/api/events' && method === 'POST') {
+      const { name, description, pairing_system, total_rounds } = await request.json().catch(() => ({}));
+      if (!name) return err('Event name is required.', 400, origin, env);
+      const rounds = Math.max(1, Math.min(10, parseInt(total_rounds)||3));
+      const result = await env.DB.prepare(
+        `INSERT INTO events (organiser_id, name, description, pairing_system, total_rounds)
+         VALUES (?, ?, ?, ?, ?)`
+      ).bind(user.user_id, name, description||'', pairing_system||'swiss', rounds).run();
+      return json({ ok: true, eventId: result.meta.last_row_id }, 201, origin, env);
+    }
+
+    // ── GET /api/events/:id — full event detail ──
+    const evtMatch = path.match(/^\/api\/events\/(\d+)$/);
+    if (evtMatch && method === 'GET') {
+      const eid = parseInt(evtMatch[1]);
+      const event = await env.DB.prepare(
+        `SELECT e.*, u.username as organiser_name FROM events e
+         JOIN users u ON e.organiser_id = u.id WHERE e.id = ?`
+      ).bind(eid).first();
+      if (!event) return err('Event not found.', 404, origin, env);
+
+      const participants = await env.DB.prepare(
+        `SELECT * FROM event_participants WHERE event_id = ? ORDER BY points DESC, wins DESC`
+      ).bind(eid).all();
+
+      const pairings = await env.DB.prepare(
+        `SELECT * FROM event_pairings WHERE event_id = ? ORDER BY round, id`
+      ).bind(eid).all();
+
+      return json({ event, participants: participants.results||[], pairings: pairings.results||[] }, 200, origin, env);
+    }
+
+    // ── PUT /api/events/:id — update event (organiser only) ──
+    const evtUpdateMatch = path.match(/^\/api\/events\/(\d+)\/update$/);
+    if (evtUpdateMatch && method === 'PUT') {
+      const eid = parseInt(evtUpdateMatch[1]);
+      const evt = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(eid).first();
+      if (!evt) return err('Event not found.', 404, origin, env);
+      if (evt.organiser_id !== user.user_id) return err('Only the organiser can update this event.', 403, origin, env);
+      const { status } = await request.json().catch(() => ({}));
+      if (status) await env.DB.prepare('UPDATE events SET status = ? WHERE id = ?').bind(status, eid).run();
+      return json({ ok: true }, 200, origin, env);
+    }
+
+    // ── POST /api/events/:id/join — join event ──
+    const joinMatch = path.match(/^\/api\/events\/(\d+)\/join$/);
+    if (joinMatch && method === 'POST') {
+      const eid = parseInt(joinMatch[1]);
+      const evt = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(eid).first();
+      if (!evt) return err('Event not found.', 404, origin, env);
+      if (evt.status !== 'open') return err('This event is no longer accepting registrations.', 400, origin, env);
+      const { faction, army_name } = await request.json().catch(() => ({}));
+      try {
+        await env.DB.prepare(
+          `INSERT INTO event_participants (event_id, user_id, username, faction, army_name)
+           VALUES (?, ?, ?, ?, ?)`
+        ).bind(eid, user.user_id, user.username, faction||'', army_name||'').run();
+      } catch(e) {
+        return err('You have already joined this event.', 409, origin, env);
+      }
+      return json({ ok: true }, 201, origin, env);
+    }
+
+    // ── POST /api/events/:id/leave — leave event ──
+    const leaveMatch = path.match(/^\/api\/events\/(\d+)\/leave$/);
+    if (leaveMatch && method === 'POST') {
+      const eid = parseInt(leaveMatch[1]);
+      await env.DB.prepare(
+        'DELETE FROM event_participants WHERE event_id = ? AND user_id = ?'
+      ).bind(eid, user.user_id).run();
+      return json({ ok: true }, 200, origin, env);
+    }
+
+    // ── POST /api/events/:id/round — generate next round pairings (organiser) ──
+    const roundMatch = path.match(/^\/api\/events\/(\d+)\/round$/);
+    if (roundMatch && method === 'POST') {
+      const eid = parseInt(roundMatch[1]);
+      const evt = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(eid).first();
+      if (!evt) return err('Event not found.', 404, origin, env);
+      if (evt.organiser_id !== user.user_id) return err('Only the organiser can generate pairings.', 403, origin, env);
+
+      // Check all results from previous round are approved
+      if (evt.current_round > 0) {
+        const pending = await env.DB.prepare(
+          `SELECT COUNT(*) as c FROM event_pairings
+           WHERE event_id = ? AND round = ? AND approved = 0 AND player2_id IS NOT NULL`
+        ).bind(eid, evt.current_round).first();
+        if (pending.c > 0) return err('All results from the current round must be approved first.', 400, origin, env);
+      }
+
+      if (evt.current_round >= evt.total_rounds) return err('All rounds have been played.', 400, origin, env);
+
+      const nextRound = evt.current_round + 1;
+      const { pairings: manualPairings, pairing_system } = await request.json().catch(() => ({}));
+      const system = pairing_system || evt.pairing_system;
+
+      // Get participants sorted by points desc
+      const participants = await env.DB.prepare(
+        `SELECT * FROM event_participants WHERE event_id = ? ORDER BY points DESC, wins DESC`
+      ).bind(eid).all();
+      const parts = participants.results || [];
+      if (parts.length < 2) return err('Need at least 2 participants.', 400, origin, env);
+
+      let pairs = [];
+
+      if (manualPairings && manualPairings.length) {
+        // Organiser provided manual pairings
+        pairs = manualPairings;
+      } else if (system === 'swiss' || system === 'elimination') {
+        // Swiss: pair by similar points, avoid rematches
+        const played = new Set();
+        if (nextRound > 1) {
+          const prev = await env.DB.prepare(
+            `SELECT player1_id, player2_id FROM event_pairings WHERE event_id = ?`
+          ).bind(eid).all();
+          (prev.results||[]).forEach(p => {
+            if (p.player2_id) played.add(`${Math.min(p.player1_id,p.player2_id)}_${Math.max(p.player1_id,p.player2_id)}`);
+          });
+        }
+        const pool = [...parts];
+        const used = new Set();
+        for (let i = 0; i < pool.length; i++) {
+          if (used.has(pool[i].user_id)) continue;
+          let opponent = null;
+          for (let j = i+1; j < pool.length; j++) {
+            if (used.has(pool[j].user_id)) continue;
+            const key = `${Math.min(pool[i].user_id,pool[j].user_id)}_${Math.max(pool[i].user_id,pool[j].user_id)}`;
+            if (!played.has(key)) { opponent = pool[j]; break; }
+          }
+          if (!opponent) {
+            // find any unpaired
+            for (let j = i+1; j < pool.length; j++) {
+              if (!used.has(pool[j].user_id)) { opponent = pool[j]; break; }
+            }
+          }
+          if (opponent) {
+            pairs.push({ p1: pool[i], p2: opponent });
+            used.add(pool[i].user_id); used.add(opponent.user_id);
+          } else {
+            // bye
+            pairs.push({ p1: pool[i], p2: null });
+            used.add(pool[i].user_id);
+          }
+        }
+      } else if (system === 'round_robin') {
+        // Simple sequential round robin
+        for (let i = 0; i < parts.length - 1; i += 2) {
+          pairs.push({ p1: parts[i], p2: parts[i+1] || null });
+        }
+        if (parts.length % 2 !== 0) pairs.push({ p1: parts[parts.length-1], p2: null });
+      } else {
+        // Manual — return empty pairings for organiser to fill
+        pairs = parts.map((p,i) => ({ p1: p, p2: parts[i+1]||null }));
+      }
+
+      // Insert pairings
+      for (const pair of pairs) {
+        await env.DB.prepare(
+          `INSERT INTO event_pairings (event_id, round, player1_id, player2_id, player1_name, player2_name)
+           VALUES (?, ?, ?, ?, ?, ?)`
+        ).bind(eid, nextRound, pair.p1.user_id, pair.p2?.user_id||null, pair.p1.username, pair.p2?.username||'BYE').run();
+        // Auto-approve byes
+        if (!pair.p2) {
+          await env.DB.prepare(
+            `UPDATE event_pairings SET result='player1', approved=1 WHERE event_id=? AND round=? AND player1_id=? AND player2_id IS NULL`
+          ).bind(eid, nextRound, pair.p1.user_id).run();
+          await env.DB.prepare(
+            `UPDATE event_participants SET wins=wins+1, points=points+3 WHERE event_id=? AND user_id=?`
+          ).bind(eid, pair.p1.user_id).run();
+        }
+      }
+
+      await env.DB.prepare(`UPDATE events SET current_round=?, status='active' WHERE id=?`).bind(nextRound, eid).run();
+      return json({ ok: true, round: nextRound }, 200, origin, env);
+    }
+
+    // ── POST /api/events/:id/result — player submits their result ──
+    const resultMatch = path.match(/^\/api\/events\/(\d+)\/result$/);
+    if (resultMatch && method === 'POST') {
+      const eid = parseInt(resultMatch[1]);
+      const { pairing_id, result: res } = await request.json().catch(() => ({}));
+      if (!pairing_id || !res) return err('pairing_id and result required.', 400, origin, env);
+
+      const pairing = await env.DB.prepare('SELECT * FROM event_pairings WHERE id = ? AND event_id = ?').bind(pairing_id, eid).first();
+      if (!pairing) return err('Pairing not found.', 404, origin, env);
+
+      // Determine if user is p1 or p2
+      if (pairing.player1_id === user.user_id) {
+        await env.DB.prepare('UPDATE event_pairings SET player1_submitted=? WHERE id=?').bind(res, pairing_id).run();
+      } else if (pairing.player2_id === user.user_id) {
+        await env.DB.prepare('UPDATE event_pairings SET player2_submitted=? WHERE id=?').bind(res, pairing_id).run();
+      } else {
+        return err('You are not a participant in this pairing.', 403, origin, env);
+      }
+      return json({ ok: true }, 200, origin, env);
+    }
+
+    // ── PUT /api/events/:id/result/:pid — organiser approves/sets result ──
+    const approveMatch = path.match(/^\/api\/events\/(\d+)\/result\/(\d+)$/);
+    if (approveMatch && method === 'PUT') {
+      const eid = parseInt(approveMatch[1]);
+      const pid = parseInt(approveMatch[2]);
+      const evt = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(eid).first();
+      if (!evt) return err('Event not found.', 404, origin, env);
+      if (evt.organiser_id !== user.user_id) return err('Only the organiser can approve results.', 403, origin, env);
+
+      const { result: res } = await request.json().catch(() => ({}));
+      if (!['player1','player2','draw'].includes(res)) return err('Invalid result.', 400, origin, env);
+
+      const pairing = await env.DB.prepare('SELECT * FROM event_pairings WHERE id = ? AND event_id = ?').bind(pid, eid).first();
+      if (!pairing) return err('Pairing not found.', 404, origin, env);
+      if (pairing.approved) return err('Result already approved.', 400, origin, env);
+
+      await env.DB.prepare('UPDATE event_pairings SET result=?, approved=1 WHERE id=?').bind(res, pid).run();
+
+      // Update standings
+      if (res === 'player1') {
+        await env.DB.prepare(`UPDATE event_participants SET wins=wins+1, points=points+3 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player1_id).run();
+        await env.DB.prepare(`UPDATE event_participants SET losses=losses+1 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player2_id).run();
+      } else if (res === 'player2') {
+        await env.DB.prepare(`UPDATE event_participants SET losses=losses+1 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player1_id).run();
+        await env.DB.prepare(`UPDATE event_participants SET wins=wins+1, points=points+3 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player2_id).run();
+      } else {
+        await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player1_id).run();
+        await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player2_id).run();
+      }
+
+      // Check if all pairings in round are approved — if so and last round, complete event
+      const pending = await env.DB.prepare(
+        `SELECT COUNT(*) as c FROM event_pairings WHERE event_id=? AND round=? AND approved=0 AND player2_id IS NOT NULL`
+      ).bind(eid, evt.current_round).first();
+      if (pending.c === 0 && evt.current_round >= evt.total_rounds) {
+        await env.DB.prepare(`UPDATE events SET status='complete' WHERE id=?`).bind(eid).run();
+      }
+
+      return json({ ok: true }, 200, origin, env);
+    }
+
+    // ── DELETE /api/events/:id — delete event (organiser only) ──
+    const evtDelMatch = path.match(/^\/api\/events\/(\d+)\/delete$/);
+    if (evtDelMatch && method === 'DELETE') {
+      const eid = parseInt(evtDelMatch[1]);
+      const evt = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(eid).first();
+      if (!evt) return err('Event not found.', 404, origin, env);
+      if (evt.organiser_id !== user.user_id) return err('Only the organiser can delete this event.', 403, origin, env);
+      await env.DB.prepare('DELETE FROM events WHERE id = ?').bind(eid).run();
+      return json({ ok: true }, 200, origin, env);
+    }
+
     return err('Not found.', 404, origin, env);
   }
 };

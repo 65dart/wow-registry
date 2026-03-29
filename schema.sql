@@ -49,3 +49,56 @@ INSERT OR IGNORE INTO users (username, email, password) VALUES
   ('mod',       'mod2@wowregistry.com',       'pbkdf2:91f4f27246db1ced848ea796ace4522a:fdabf617b8a176fb02cb5e42d87327496cfed1c13865e394909b2246fb05b18e'),
   ('Moderator', 'moderator@wowregistry.com',  'pbkdf2:6503263c16ab86dd1b11dec7601f6c66:5851ff3ab4f4d65629543ed1f9f8d706d71ecdb8985005dff94a667a583c3e18'),
   ('moderator', 'moderator2@wowregistry.com', 'pbkdf2:6c45b1cfcc4b6b3bb8e40f86ee978840:9ea4b890613dd952a58101dcbf649cd5e885ea0e7150863ce206753d8be720f4');
+
+-- =============================================================
+--  Events System
+-- =============================================================
+
+-- Events table
+CREATE TABLE IF NOT EXISTS events (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  organiser_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name           TEXT    NOT NULL,
+  description    TEXT    DEFAULT '',
+  pairing_system TEXT    NOT NULL DEFAULT 'swiss',  -- swiss, round_robin, elimination, manual
+  total_rounds   INTEGER NOT NULL DEFAULT 3,
+  current_round  INTEGER NOT NULL DEFAULT 0,        -- 0 = not started
+  status         TEXT    NOT NULL DEFAULT 'open',   -- open, active, complete
+  created_at     TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Event participants
+CREATE TABLE IF NOT EXISTS event_participants (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id   INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  username   TEXT    NOT NULL,
+  faction    TEXT    DEFAULT '',
+  army_name  TEXT    DEFAULT '',
+  wins       INTEGER NOT NULL DEFAULT 0,
+  losses     INTEGER NOT NULL DEFAULT 0,
+  draws      INTEGER NOT NULL DEFAULT 0,
+  points     INTEGER NOT NULL DEFAULT 0,  -- tournament points (3W/1D/0L)
+  joined_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(event_id, user_id)
+);
+
+-- Event pairings (one row per game per round)
+CREATE TABLE IF NOT EXISTS event_pairings (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id      INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  round         INTEGER NOT NULL,
+  player1_id    INTEGER NOT NULL REFERENCES users(id),
+  player2_id    INTEGER,                              -- NULL = bye
+  player1_name  TEXT    NOT NULL,
+  player2_name  TEXT    DEFAULT 'BYE',
+  result        TEXT    DEFAULT NULL,                 -- 'player1','player2','draw',NULL=pending
+  player1_submitted TEXT DEFAULT NULL,               -- submitted result from p1
+  player2_submitted TEXT DEFAULT NULL,               -- submitted result from p2
+  approved      INTEGER NOT NULL DEFAULT 0,          -- 0=pending, 1=approved
+  created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_events_organiser   ON events(organiser_id);
+CREATE INDEX IF NOT EXISTS idx_participants_event ON event_participants(event_id);
+CREATE INDEX IF NOT EXISTS idx_pairings_event     ON event_pairings(event_id);

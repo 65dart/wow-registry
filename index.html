@@ -85,6 +85,7 @@ select option{background:#1a1208;}
 .lbtn.liked{border-color:#a03030;color:#e06060;}
 .dbtn{background:none;border:1px solid rgba(180,60,60,.25);color:rgba(200,80,80,.5);font-size:.65rem;padding:.22rem .55rem;border-radius:2px;cursor:pointer;transition:all .2s;}
 .dbtn:hover{border-color:rgba(200,80,80,.6);color:#d46060;}
+.evt-filter-btn.on{border-color:var(--gold)!important;color:var(--gold)!important;}
 
 /* SUBMIT */
 .slayout{display:grid;grid-template-columns:1fr 360px;gap:2rem;align-items:start;}
@@ -370,6 +371,7 @@ select option{background:#1a1208;}
   <button class="nt" data-page="leaderboard">⚜ Leaderboard</button>
   <button class="nt" data-page="charts">✦ Statistics</button>
   <button class="nt" data-page="rosters">⚔ Rosters</button>
+  <button class="nt" data-page="events">⚔ Events</button>
   <button class="nt" data-page="admin" id="nav-admin" style="display:none">⚙ Admin</button>
   <div class="user-pill" id="user-pill" style="display:none">
     <span id="user-name"></span>
@@ -618,6 +620,82 @@ select option{background:#1a1208;}
       </div>
     </div>
   </div>
+</div>
+
+<!-- EVENTS -->
+<div class="page" id="page-events">
+
+  <!-- Events list view -->
+  <div id="events-list-view">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;flex-wrap:wrap;gap:.6rem;">
+      <div style="font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);">
+        Community Events
+      </div>
+      <button class="subbtn" id="create-event-btn" style="font-size:.78rem;padding:.5rem 1.1rem;">+ Create Event</button>
+    </div>
+
+    <!-- Filter tabs -->
+    <div style="display:flex;gap:.4rem;margin-bottom:1rem;">
+      <button class="evt-filter-btn on" data-filter="all"    style="font-family:'Cinzel',serif;font-size:.65rem;padding:.3rem .75rem;border:1px solid rgba(201,168,76,.25);background:none;color:var(--text-muted);cursor:pointer;border-radius:2px;letter-spacing:.06em;">All</button>
+      <button class="evt-filter-btn"    data-filter="open"   style="font-family:'Cinzel',serif;font-size:.65rem;padding:.3rem .75rem;border:1px solid rgba(201,168,76,.25);background:none;color:var(--text-muted);cursor:pointer;border-radius:2px;letter-spacing:.06em;">Open</button>
+      <button class="evt-filter-btn"    data-filter="active" style="font-family:'Cinzel',serif;font-size:.65rem;padding:.3rem .75rem;border:1px solid rgba(201,168,76,.25);background:none;color:var(--text-muted);cursor:pointer;border-radius:2px;letter-spacing:.06em;">Active</button>
+      <button class="evt-filter-btn"    data-filter="complete" style="font-family:'Cinzel',serif;font-size:.65rem;padding:.3rem .75rem;border:1px solid rgba(201,168,76,.25);background:none;color:var(--text-muted);cursor:pointer;border-radius:2px;letter-spacing:.06em;">Complete</button>
+    </div>
+
+    <div id="events-cards"></div>
+  </div>
+
+  <!-- Create event form -->
+  <div id="events-create-view" style="display:none;max-width:520px;margin:0 auto;">
+    <div class="panel">
+      <div class="ptitle">⚔ Create New Event</div>
+      <div class="ff" style="margin-bottom:.9rem;">
+        <label>Event Name *</label>
+        <input type="text" id="ev-name" placeholder="e.g. Altdorf Grand Tournament">
+      </div>
+      <div class="ff" style="margin-bottom:.9rem;">
+        <label>Description</label>
+        <textarea id="ev-desc" rows="2" placeholder="Optional description or notes for participants…" style="width:100%;background:rgba(0,0,0,.25);border:1px solid rgba(201,168,76,.2);color:var(--parchment);padding:.55rem .7rem;font-size:.88rem;border-radius:2px;resize:vertical;"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.9rem;">
+        <div class="ff">
+          <label>Pairing System</label>
+          <select id="ev-system">
+            <option value="swiss">Swiss</option>
+            <option value="round_robin">Round Robin</option>
+            <option value="elimination">Single Elimination</option>
+            <option value="manual">Manual</option>
+          </select>
+        </div>
+        <div class="ff">
+          <label>Number of Rounds</label>
+          <select id="ev-rounds">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:.6rem;margin-top:.4rem;">
+        <button class="subbtn" id="ev-submit-btn" style="flex:1;">⚔ Create Event</button>
+        <button class="subbtn" id="ev-cancel-btn" style="flex:0 0 auto;font-size:.75rem;border-color:rgba(201,168,76,.2);color:var(--text-muted);">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Event detail view -->
+  <div id="events-detail-view" style="display:none;">
+    <button id="ev-back-btn" style="font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:.08em;background:none;border:1px solid rgba(201,168,76,.2);color:var(--text-muted);padding:.3rem .8rem;cursor:pointer;border-radius:2px;margin-bottom:1rem;">← Back to Events</button>
+    <div id="events-detail-content"></div>
+  </div>
+
 </div>
 
 <!-- ADMIN -->
@@ -2245,6 +2323,450 @@ function renderAdminRecords(){
 }
 
 // Refresh admin panel when navigating to it
+// ══════════════════════════════════════════════════════
+//  EVENTS SYSTEM
+// ══════════════════════════════════════════════════════
+
+let eventsData       = [];   // all events list
+let currentEvent     = null; // currently viewed event detail
+let evtFilterStatus  = 'all';
+
+// Status badge
+function evtStatusBadge(status){
+  const cfg = {
+    open:     { label:'Open',     color:'#6aaf6a' },
+    active:   { label:'Active',   color:'var(--gold)' },
+    complete: { label:'Complete', color:'var(--text-muted)' },
+  };
+  const c = cfg[status]||cfg.open;
+  return `<span style="font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.08em;padding:.18rem .5rem;border:1px solid ${c.color};color:${c.color};border-radius:2px;text-transform:uppercase;">${c.label}</span>`;
+}
+
+// Pairing system label
+function pairingLabel(sys){
+  return { swiss:'Swiss', round_robin:'Round Robin', elimination:'Single Elimination', manual:'Manual' }[sys] || sys;
+}
+
+// ── Load and render events list ──
+async function loadEvents(){
+  try {
+    const res = await fetch(`${API}/api/events`, { headers: apiHeaders() });
+    const data = await res.json();
+    eventsData = data.events || [];
+  } catch(e) { eventsData = []; }
+  renderEventsList();
+}
+
+function renderEventsList(){
+  const container = document.getElementById('events-cards');
+  if(!container) return;
+  let list = eventsData;
+  if(evtFilterStatus !== 'all') list = list.filter(e => e.status === evtFilterStatus);
+  if(!list.length){
+    container.innerHTML = `<div class="empty"><div class="eico">⚔</div><p>No events found.<br>Be the first to create one!</p></div>`;
+    return;
+  }
+  container.innerHTML = list.map(e => `
+    <div class="ac" style="margin-bottom:.8rem;padding:1rem 1.1rem;cursor:pointer;" data-evid="${e.id}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;">
+        <div>
+          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem;flex-wrap:wrap;">
+            ${evtStatusBadge(e.status)}
+            <span style="font-family:'Cinzel',serif;font-size:.92rem;color:var(--parchment)">${clean(e.name)}</span>
+          </div>
+          <div style="font-size:.8rem;color:var(--text-muted);">
+            Organised by <strong style="color:var(--aged)">${clean(e.organiser_name)}</strong>
+            · ${pairingLabel(e.pairing_system)}
+            · ${e.total_rounds} round${e.total_rounds!==1?'s':''}
+            · ${e.participant_count} player${e.participant_count!==1?'s':''}
+            ${e.current_round>0?`· Round ${e.current_round}/${e.total_rounds}`:''}
+          </div>
+          ${e.description?`<div style="font-size:.8rem;color:var(--parchment-dark);font-style:italic;margin-top:.5rem;">${clean(e.description)}</div>`:''}
+        </div>
+        <span style="font-family:'Cinzel',serif;font-size:.68rem;color:var(--gold);white-space:nowrap;">View →</span>
+      </div>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('[data-evid]').forEach(card => {
+    card.addEventListener('click', () => openEvent(+card.dataset.evid));
+  });
+}
+
+// ── Open event detail ──
+async function openEvent(id){
+  document.getElementById('events-list-view').style.display   = 'none';
+  document.getElementById('events-create-view').style.display = 'none';
+  document.getElementById('events-detail-view').style.display = 'block';
+  document.getElementById('events-detail-content').innerHTML  = `<div style="text-align:center;padding:2rem;color:var(--text-muted);">Loading…</div>`;
+
+  try {
+    const res = await fetch(`${API}/api/events/${id}`, { headers: apiHeaders() });
+    const data = await res.json();
+    currentEvent = data;
+    renderEventDetail(data);
+  } catch(e) {
+    document.getElementById('events-detail-content').innerHTML = `<div style="color:#d46060;padding:1rem;">Could not load event.</div>`;
+  }
+}
+
+// ── Render event detail ──
+function renderEventDetail(data){
+  const { event, participants, pairings } = data;
+  const isOrganiser = event.organiser_id === authUserId || event.organiser_name === authUser;
+  const isParticipant = participants.some(p => p.user_id === authUserId || p.username === authUser);
+  const myEntry = participants.find(p => p.username === authUser);
+  const canStartRound = isOrganiser && event.status !== 'complete' &&
+    (event.current_round === 0 || allRoundApproved(pairings, event.current_round)) &&
+    event.current_round < event.total_rounds;
+
+  // Group pairings by round
+  const byRound = {};
+  pairings.forEach(p => { if(!byRound[p.round]) byRound[p.round] = []; byRound[p.round].push(p); });
+
+  let html = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.6rem;margin-bottom:1.2rem;">
+      <div>
+        <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.3rem;">
+          ${evtStatusBadge(event.status)}
+          <span style="font-family:'Cinzel',serif;font-size:1.1rem;color:var(--parchment)">${clean(event.name)}</span>
+        </div>
+        <div style="font-size:.8rem;color:var(--text-muted);">
+          By <strong style="color:var(--aged)">${clean(event.organiser_name)}</strong>
+          · ${pairingLabel(event.pairing_system)} · ${event.total_rounds} rounds
+          ${event.current_round>0?`· Round ${event.current_round}/${event.total_rounds}`:'· Not started'}
+        </div>
+        ${event.description?`<div style="font-size:.82rem;font-style:italic;color:var(--parchment-dark);margin-top:.4rem;">${clean(event.description)}</div>`:''}
+      </div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+        ${event.status==='open' && !isParticipant ? `<button class="subbtn" id="ev-join-btn" style="font-size:.75rem;padding:.4rem .9rem;">Join Event</button>` : ''}
+        ${event.status==='open' && isParticipant && !isOrganiser ? `<button class="subbtn" id="ev-leave-btn" style="font-size:.75rem;padding:.4rem .9rem;border-color:rgba(180,60,60,.4);color:#d46060;">Leave</button>` : ''}
+        ${isOrganiser && event.status==='open' ? `<button class="subbtn" id="ev-close-reg-btn" style="font-size:.75rem;padding:.4rem .9rem;">Close Registration</button>` : ''}
+        ${isOrganiser && event.status==='complete' ? `<button class="subbtn" id="ev-delete-btn" style="font-size:.75rem;padding:.4rem .9rem;border-color:rgba(180,60,60,.4);color:#d46060;">Delete Event</button>` : ''}
+      </div>
+    </div>`;
+
+  // Standings table
+  if(participants.length){
+    html += `<div class="panel" style="margin-bottom:1.2rem;">
+      <div class="ptitle">⚜ Standings</div>
+      <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+        <thead><tr style="color:var(--text-muted);font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.06em;border-bottom:1px solid rgba(201,168,76,.15);">
+          <th style="padding:.4rem .3rem;text-align:left;">#</th>
+          <th style="padding:.4rem .3rem;text-align:left;">Commander</th>
+          <th style="padding:.4rem .3rem;text-align:left;">Faction</th>
+          <th style="padding:.4rem .3rem;text-align:center;">W</th>
+          <th style="padding:.4rem .3rem;text-align:center;">D</th>
+          <th style="padding:.4rem .3rem;text-align:center;">L</th>
+          <th style="padding:.4rem .3rem;text-align:center;">Pts</th>
+        </tr></thead>
+        <tbody>
+          ${participants.map((p,i) => `<tr style="border-bottom:1px solid rgba(201,168,76,.07);">
+            <td style="padding:.45rem .3rem;color:var(--text-muted);">${i+1}</td>
+            <td style="padding:.45rem .3rem;color:var(--parchment);font-weight:600;">${clean(p.username)}${p.army_name?`<div style="font-size:.72rem;color:var(--text-muted);font-weight:400;">${clean(p.army_name)}</div>`:''}</td>
+            <td style="padding:.45rem .3rem;color:var(--text-muted);">${p.faction||'—'}</td>
+            <td style="padding:.45rem .3rem;text-align:center;color:#6aaf6a;">${p.wins}</td>
+            <td style="padding:.45rem .3rem;text-align:center;color:var(--gold);">${p.draws}</td>
+            <td style="padding:.45rem .3rem;text-align:center;color:#d46060;">${p.losses}</td>
+            <td style="padding:.45rem .3rem;text-align:center;font-family:'Cinzel',serif;color:var(--aged);font-weight:700;">${p.points}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }
+
+  // Organiser controls — generate next round
+  if(canStartRound){
+    const label = event.current_round === 0 ? 'Start Round 1' : `Start Round ${event.current_round + 1}`;
+    html += `<div class="panel" style="margin-bottom:1.2rem;border-color:rgba(201,168,76,.3);">
+      <div class="ptitle">⚙ Organiser Controls</div>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;">
+        <button class="subbtn" id="ev-gen-round-btn" style="font-size:.78rem;padding:.5rem 1rem;">⚔ ${label}</button>
+        ${event.current_round > 0 ? `<button class="subbtn" id="ev-manual-pair-btn" style="font-size:.78rem;padding:.5rem 1rem;border-color:rgba(201,168,76,.3);color:var(--text-muted);">✎ Manual Pairings</button>` : ''}
+      </div>
+      <div id="manual-pair-form" style="display:none;margin-top:1rem;"></div>
+    </div>`;
+  }
+
+  // Rounds & pairings
+  const rounds = Object.keys(byRound).sort((a,b)=>b-a);
+  rounds.forEach(rnd => {
+    const rPairings = byRound[rnd];
+    const allApproved = rPairings.every(p => p.approved || !p.player2_id);
+    html += `<div class="panel" style="margin-bottom:1rem;">
+      <div class="ptitle">Round ${rnd} ${allApproved?'<span style="font-size:.65rem;color:#6aaf6a;margin-left:.4rem;">✓ Complete</span>':''}</div>
+      ${rPairings.map(p => {
+        const myPairing = p.player1_name === authUser || p.player2_name === authUser;
+        const isBye = !p.player2_id;
+        const pending = !p.approved && !isBye;
+        const myResult = p.player1_name === authUser ? p.player1_submitted : p.player2_submitted;
+
+        let resultDisplay = '';
+        if(p.approved){
+          const winner = p.result === 'player1' ? p.player1_name : p.result === 'player2' ? p.player2_name : 'Draw';
+          resultDisplay = p.result === 'draw'
+            ? `<span style="color:var(--gold);font-size:.78rem;">Draw</span>`
+            : `<span style="color:#6aaf6a;font-size:.78rem;">Winner: ${clean(winner)}</span>`;
+        } else if(isBye){
+          resultDisplay = `<span style="color:var(--text-muted);font-size:.78rem;">BYE</span>`;
+        } else {
+          resultDisplay = `<span style="color:var(--text-muted);font-size:.72rem;font-style:italic;">Pending${p.player1_submitted?` · ${clean(p.player1_name)} submitted`:''}${p.player2_submitted?` · ${clean(p.player2_name)} submitted`:''}</span>`;
+        }
+
+        // Player submit buttons
+        let submitHtml = '';
+        if(myPairing && pending && !myResult){
+          const isp1 = p.player1_name === authUser;
+          submitHtml = `<div style="display:flex;gap:.4rem;margin-top:.5rem;">
+            <button class="subbtn ev-submit-result" data-pid="${p.id}" data-result="${isp1?'player1':'player2'}" style="font-size:.68rem;padding:.3rem .6rem;border-color:#6aaf6a;color:#6aaf6a;">I Won</button>
+            <button class="subbtn ev-submit-result" data-pid="${p.id}" data-result="draw" style="font-size:.68rem;padding:.3rem .6rem;border-color:var(--gold);color:var(--gold);">Draw</button>
+            <button class="subbtn ev-submit-result" data-pid="${p.id}" data-result="${isp1?'player2':'player1'}" style="font-size:.68rem;padding:.3rem .6rem;border-color:#d46060;color:#d46060;">I Lost</button>
+          </div>`;
+        } else if(myResult && pending){
+          submitHtml = `<div style="font-size:.72rem;color:var(--text-muted);font-style:italic;margin-top:.4rem;">You submitted: <strong>${myResult === 'draw' ? 'Draw' : (myResult === (p.player1_name===authUser?'player1':'player2') ? 'Win' : 'Loss')}</strong> — awaiting organiser approval</div>`;
+        }
+
+        // Organiser approve controls
+        let approveHtml = '';
+        if(isOrganiser && pending){
+          approveHtml = `<div style="display:flex;gap:.4rem;margin-top:.5rem;flex-wrap:wrap;">
+            <span style="font-size:.68rem;color:var(--text-muted);align-self:center;">Approve:</span>
+            <button class="subbtn ev-approve-result" data-pid="${p.id}" data-result="player1" style="font-size:.68rem;padding:.25rem .55rem;border-color:#6aaf6a;color:#6aaf6a;">${clean(p.player1_name)} Wins</button>
+            <button class="subbtn ev-approve-result" data-pid="${p.id}" data-result="draw" style="font-size:.68rem;padding:.25rem .55rem;border-color:var(--gold);color:var(--gold);">Draw</button>
+            <button class="subbtn ev-approve-result" data-pid="${p.id}" data-result="player2" style="font-size:.68rem;padding:.25rem .55rem;border-color:#6aaf6a;color:#6aaf6a;">${clean(p.player2_name)} Wins</button>
+          </div>`;
+        }
+
+        return `<div style="padding:.65rem 0;border-bottom:1px solid rgba(201,168,76,.08);">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap;">
+            <div style="font-size:.88rem;color:var(--parchment);">
+              <strong>${clean(p.player1_name)}</strong>
+              <span style="color:var(--text-muted);margin:0 .4rem;">vs</span>
+              <strong>${isBye?'<span style="color:var(--text-muted)">BYE</span>':clean(p.player2_name)}</strong>
+            </div>
+            <div>${resultDisplay}</div>
+          </div>
+          ${submitHtml}${approveHtml}
+        </div>`;
+      }).join('')}
+    </div>`;
+  });
+
+  // Join form
+  if(event.status === 'open' && !isParticipant){
+    html += `<div class="panel" id="ev-join-form" style="display:none;margin-top:1rem;">
+      <div class="ptitle">Join This Event</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem;">
+        <div class="ff"><label>Your Army Name</label><input type="text" id="ev-join-army" placeholder="e.g. The Iron Legion"></div>
+        <div class="ff"><label>Faction</label>
+          <select id="ev-join-faction">
+            <option value="">Select faction…</option>
+            ${Object.keys(FACTION_UNITS).map(f=>`<option>${f}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <button class="subbtn" id="ev-join-confirm-btn" style="font-size:.78rem;">⚔ Confirm Registration</button>
+    </div>`;
+  }
+
+  document.getElementById('events-detail-content').innerHTML = html;
+  wireEventDetailButtons(event, participants);
+}
+
+function allRoundApproved(pairings, round){
+  const rp = pairings.filter(p => p.round === round && p.player2_id);
+  return rp.length > 0 && rp.every(p => p.approved);
+}
+
+// ── Wire all buttons in event detail ──
+function wireEventDetailButtons(event, participants){
+  // Join button toggles form
+  document.getElementById('ev-join-btn')?.addEventListener('click', () => {
+    const form = document.getElementById('ev-join-form');
+    if(form) form.style.display = form.style.display==='none' ? 'block' : 'none';
+  });
+
+  // Confirm join
+  document.getElementById('ev-join-confirm-btn')?.addEventListener('click', async () => {
+    const army_name = document.getElementById('ev-join-army')?.value.trim()||'';
+    const faction   = document.getElementById('ev-join-faction')?.value||'';
+    try {
+      const res = await fetch(`${API}/api/events/${event.id}/join`, {
+        method:'POST', headers:apiHeaders(), body:JSON.stringify({faction, army_name})
+      });
+      if(!res.ok){ const d=await res.json(); showToast(d.error||'Could not join.',true); return; }
+      showToast('✦ You have joined the event!');
+      openEvent(event.id);
+    } catch(e){ showToast('⚠ Could not join event.',true); }
+  });
+
+  // Leave
+  document.getElementById('ev-leave-btn')?.addEventListener('click', async () => {
+    if(!confirm('Leave this event?')) return;
+    await fetch(`${API}/api/events/${event.id}/leave`, { method:'POST', headers:apiHeaders() });
+    showToast('You have left the event.');
+    openEvent(event.id);
+  });
+
+  // Close registration
+  document.getElementById('ev-close-reg-btn')?.addEventListener('click', async () => {
+    if(!confirm('Close registration? Players will no longer be able to join.')) return;
+    await fetch(`${API}/api/events/${event.id}/update`, {
+      method:'PUT', headers:apiHeaders(), body:JSON.stringify({status:'active'})
+    });
+    showToast('Registration closed. You can now start Round 1.');
+    openEvent(event.id);
+  });
+
+  // Generate next round
+  document.getElementById('ev-gen-round-btn')?.addEventListener('click', async () => {
+    const label = event.current_round === 0 ? 'Start Round 1' : `Start Round ${event.current_round+1}`;
+    if(!confirm(`${label}? This will generate pairings automatically.`)) return;
+    const res = await fetch(`${API}/api/events/${event.id}/round`, {
+      method:'POST', headers:apiHeaders(), body:JSON.stringify({})
+    });
+    const d = await res.json();
+    if(!res.ok){ showToast(d.error||'Could not generate round.',true); return; }
+    showToast(`✦ Round ${d.round} pairings generated!`);
+    openEvent(event.id);
+  });
+
+  // Manual pairings toggle
+  document.getElementById('ev-manual-pair-btn')?.addEventListener('click', () => {
+    const form = document.getElementById('manual-pair-form');
+    if(!form) return;
+    if(form.style.display !== 'none'){ form.style.display='none'; return; }
+    // Build manual pairing UI
+    const names = participants.map(p => p.username);
+    let rows = '';
+    for(let i=0; i<Math.ceil(names.length/2); i++){
+      rows += `<div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.5rem;">
+        <select class="mp-p1" style="flex:1;">
+          ${names.map(n=>`<option${n===names[i*2]?' selected':''}>${n}</option>`).join('')}
+        </select>
+        <span style="color:var(--text-muted);font-size:.8rem;">vs</span>
+        <select class="mp-p2" style="flex:1;">
+          <option value="">BYE</option>
+          ${names.map(n=>`<option${n===names[i*2+1]?' selected':''}>${n}</option>`).join('')}
+        </select>
+      </div>`;
+    }
+    form.innerHTML = `${rows}
+      <button class="subbtn" id="ev-manual-submit-btn" style="font-size:.75rem;margin-top:.4rem;">✓ Submit Manual Pairings</button>`;
+    form.style.display = 'block';
+
+    document.getElementById('ev-manual-submit-btn')?.addEventListener('click', async () => {
+      const p1s = [...form.querySelectorAll('.mp-p1')].map(s=>s.value);
+      const p2s = [...form.querySelectorAll('.mp-p2')].map(s=>s.value);
+      const manualPairings = p1s.map((p1,i) => {
+        const p1data = participants.find(p=>p.username===p1);
+        const p2data = participants.find(p=>p.username===p2s[i]);
+        return { p1: p1data||{user_id:0,username:p1}, p2: p2data||null };
+      }).filter(p=>p.p1.user_id);
+      const res = await fetch(`${API}/api/events/${event.id}/round`, {
+        method:'POST', headers:apiHeaders(), body:JSON.stringify({pairings:manualPairings})
+      });
+      const d = await res.json();
+      if(!res.ok){ showToast(d.error||'Could not create pairings.',true); return; }
+      showToast(`✦ Round ${d.round} pairings created!`);
+      openEvent(event.id);
+    });
+  });
+
+  // Player submit result
+  document.querySelectorAll('.ev-submit-result').forEach(btn => {
+    btn.addEventListener('click', async function(){
+      const pid = +this.dataset.pid;
+      const result = this.dataset.result;
+      const res = await fetch(`${API}/api/events/${event.id}/result`, {
+        method:'POST', headers:apiHeaders(), body:JSON.stringify({pairing_id:pid, result})
+      });
+      if(!res.ok){ showToast('Could not submit result.',true); return; }
+      showToast('✦ Result submitted — awaiting organiser approval.');
+      openEvent(event.id);
+    });
+  });
+
+  // Organiser approve result
+  document.querySelectorAll('.ev-approve-result').forEach(btn => {
+    btn.addEventListener('click', async function(){
+      const pid = +this.dataset.pid;
+      const result = this.dataset.result;
+      const res = await fetch(`${API}/api/events/${event.id}/result/${pid}`, {
+        method:'PUT', headers:apiHeaders(), body:JSON.stringify({result})
+      });
+      if(!res.ok){ showToast('Could not approve result.',true); return; }
+      showToast('✦ Result approved.');
+      openEvent(event.id);
+    });
+  });
+
+  // Delete event
+  document.getElementById('ev-delete-btn')?.addEventListener('click', async () => {
+    if(!confirm('Permanently delete this event and all its data?')) return;
+    await fetch(`${API}/api/events/${event.id}/delete`, { method:'DELETE', headers:apiHeaders() });
+    showToast('Event deleted.');
+    showEventsListView();
+    loadEvents();
+  });
+}
+
+// ── View switching ──
+function showEventsListView(){
+  document.getElementById('events-list-view').style.display   = 'block';
+  document.getElementById('events-create-view').style.display = 'none';
+  document.getElementById('events-detail-view').style.display = 'none';
+  currentEvent = null;
+}
+
+// ── Create event ──
+document.getElementById('create-event-btn')?.addEventListener('click', () => {
+  document.getElementById('events-list-view').style.display   = 'none';
+  document.getElementById('events-create-view').style.display = 'block';
+  document.getElementById('events-detail-view').style.display = 'none';
+});
+
+document.getElementById('ev-cancel-btn')?.addEventListener('click', showEventsListView);
+
+document.getElementById('ev-submit-btn')?.addEventListener('click', async () => {
+  const name   = document.getElementById('ev-name').value.trim();
+  const desc   = document.getElementById('ev-desc').value.trim();
+  const system = document.getElementById('ev-system').value;
+  const rounds = document.getElementById('ev-rounds').value;
+  if(!name){ showToast('⚠ Event name is required.',true); return; }
+  const btn = document.getElementById('ev-submit-btn');
+  btn.disabled = true; btn.textContent = '⏳ Creating…';
+  try {
+    const res = await fetch(`${API}/api/events`, {
+      method:'POST', headers:apiHeaders(),
+      body:JSON.stringify({name, description:desc, pairing_system:system, total_rounds:+rounds})
+    });
+    const d = await res.json();
+    if(!res.ok){ showToast(d.error||'Could not create event.',true); return; }
+    showToast('✦ Event created!');
+    document.getElementById('ev-name').value = '';
+    document.getElementById('ev-desc').value = '';
+    await loadEvents();
+    openEvent(d.eventId);
+  } catch(e){ showToast('⚠ Could not create event.',true); }
+  finally { btn.disabled=false; btn.textContent='⚔ Create Event'; }
+});
+
+document.getElementById('ev-back-btn')?.addEventListener('click', () => {
+  showEventsListView();
+  loadEvents();
+});
+
+// Filter buttons
+document.querySelectorAll('.evt-filter-btn').forEach(btn => {
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.evt-filter-btn').forEach(b => b.classList.remove('on'));
+    this.classList.add('on');
+    evtFilterStatus = this.dataset.filter;
+    renderEventsList();
+  });
+});
+
 function renderAdmin(){
   populateAdminUserSelect();
   renderAdminRecords();
@@ -2279,6 +2801,7 @@ document.querySelectorAll('.nt').forEach(btn=>{
     if(this.dataset.page==='leaderboard') renderLB();
     if(this.dataset.page==='rosters') renderRosters();
     if(this.dataset.page==='admin') renderAdmin();
+    if(this.dataset.page==='events'){ loadEvents(); }
   });
 });
 
