@@ -85,6 +85,8 @@ select option{background:#1a1208;}
 .lbtn.liked{border-color:#a03030;color:#e06060;}
 .dbtn{background:none;border:1px solid rgba(180,60,60,.25);color:rgba(200,80,80,.5);font-size:.65rem;padding:.22rem .55rem;border-radius:2px;cursor:pointer;transition:all .2s;}
 .dbtn:hover{border-color:rgba(200,80,80,.6);color:#d46060;}
+.ebtn{background:none;border:1px solid rgba(201,168,76,.2);color:var(--text-muted);font-size:.65rem;padding:.22rem .55rem;border-radius:2px;cursor:pointer;transition:all .2s;}
+.ebtn:hover{border-color:var(--gold);color:var(--gold);}
 .evt-filter-btn.on{border-color:var(--gold)!important;color:var(--gold)!important;}
 
 /* SUBMIT */
@@ -1553,13 +1555,21 @@ function mkCard(a){
       ${a.opponent?`<span style="font-size:.8rem;color:var(--text-muted)">${factionIconEl(a.opponent,18)} vs ${a.opponent}</span>`:''}
       ${a.event?`<span class="cev">${clean(a.event)}</span>`:''}
     </div>
-    ${a.notes?`<div class="cnts">${clean(a.notes)}</div>`:''}
+    ${a.notes?`<div class="cnts" id="cnts-${a._dbId}">${clean(a.notes)}</div>`:`<div class="cnts" id="cnts-${a._dbId}" style="display:none"></div>`}
+    <div id="cnts-edit-${a._dbId}" style="display:none;margin-top:.65rem;padding-top:.65rem;border-top:1px solid rgba(201,168,76,.1);">
+      <textarea class="cnts-ta" rows="3" style="width:100%;background:rgba(0,0,0,.25);border:1px solid rgba(201,168,76,.2);color:var(--parchment);padding:.5rem .65rem;font-size:.84rem;border-radius:2px;resize:vertical;font-style:italic;line-height:1.55;">${a.notes||''}</textarea>
+      <div style="display:flex;gap:.4rem;margin-top:.4rem;">
+        <button class="subbtn cnts-save-btn" data-dbid="${a._dbId}" style="font-size:.68rem;padding:.28rem .7rem;">✓ Save</button>
+        <button class="subbtn cnts-cancel-btn" data-dbid="${a._dbId}" style="font-size:.68rem;padding:.28rem .7rem;border-color:rgba(201,168,76,.2);color:var(--text-muted);">Cancel</button>
+      </div>
+    </div>
     ${(a.units&&a.units.length)?`<div style="margin-top:.55rem;padding-top:.55rem;border-top:1px solid rgba(201,168,76,.08);display:flex;flex-wrap:wrap;gap:.3rem;align-items:center"><span style="font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-right:.25rem">Your Roster:</span>${a.units.map(u=>`<span class="type-badge ${TYPE_CLASS[u.type]||'tb-core'}">${clean(u.name)}${u.models?' ×'+u.models:''}</span>`).join('')}</div>`:''}
     ${(a.oppUnits&&a.oppUnits.length)?`<div style="margin-top:.4rem;display:flex;flex-wrap:wrap;gap:.3rem;align-items:center"><span style="font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-right:.25rem">Opp. Roster:</span>${a.oppUnits.map(u=>`<span class="type-badge ${TYPE_CLASS[u.type]||'tb-core'}" style="opacity:.75">${clean(u.name)}${u.models?' ×'+u.models:''}</span>`).join('')}</div>`:''}
     <div class="cfoot">
       <span class="cdt">${fmtD(a.date)}</span>
       <div class="cact">
         <button class="lbtn${isL?' liked':''}" data-id="${a._dbId}">♥ <span>${a.likes}</span></button>
+        ${isOwner?`<button class="ebtn" data-edit="${a._dbId}" title="Edit battle notes">✎</button>`:''}
         ${canDelete?`<button class="dbtn" data-del="${a._dbId}" title="${isOwner?'Delete your record':'Delete record (admin)'}">✕</button>`:''}
       </div>
     </div>
@@ -1577,6 +1587,10 @@ function renderCards(){
 document.getElementById('cards').addEventListener('click',function(e){
   const lb=e.target.closest('.lbtn');
   const db=e.target.closest('.dbtn');
+  const eb=e.target.closest('.ebtn');
+  const sb=e.target.closest('.cnts-save-btn');
+  const cb=e.target.closest('.cnts-cancel-btn');
+
   if(lb){
     const dbId=+lb.dataset.id;
     const a=armies.find(x=>x._dbId===dbId); if(!a) return;
@@ -1585,7 +1599,6 @@ document.getElementById('cards').addEventListener('click',function(e){
     else{ liked.add(dbId); a.likes++; lb.classList.add('liked'); }
     if(myA) myA.likes=a.likes;
     lb.querySelector('span').textContent=a.likes;
-    // Use dedicated like endpoint so any user can like any army
     if(authToken && authToken !== 'local-dev-token' && a._dbId){
       fetch(`${API}/api/armies/${a._dbId}/like`, {
         method: 'POST',
@@ -1594,6 +1607,50 @@ document.getElementById('cards').addEventListener('click',function(e){
       }).catch(()=>{});
     }
   }
+
+  if(eb){
+    const dbId=+eb.dataset.edit;
+    const notesEl = document.getElementById(`cnts-${dbId}`);
+    const editEl  = document.getElementById(`cnts-edit-${dbId}`);
+    if(notesEl) notesEl.style.display='none';
+    if(editEl)  editEl.style.display='block';
+  }
+
+  if(cb){
+    const dbId=+cb.dataset.dbid;
+    const a=armies.find(x=>x._dbId===dbId);
+    const notesEl = document.getElementById(`cnts-${dbId}`);
+    const editEl  = document.getElementById(`cnts-edit-${dbId}`);
+    if(notesEl){
+      notesEl.textContent = a ? clean(a.notes||'') : '';
+      notesEl.style.display = (a&&a.notes) ? 'block' : 'none';
+    }
+    if(editEl) editEl.style.display='none';
+  }
+
+  if(sb){
+    const dbId=+sb.dataset.dbid;
+    const editEl = document.getElementById(`cnts-edit-${dbId}`);
+    const ta = editEl?.querySelector('.cnts-ta');
+    const newNotes = ta?.value.trim()||'';
+    const a = armies.find(x=>x._dbId===dbId);
+    const myA = myArmies.find(x=>x._dbId===dbId);
+    if(!a) return;
+    sb.disabled=true; sb.textContent='⏳';
+    const updated = {...a, notes: newNotes};
+    saveArmy(updated).then(()=>{
+      a.notes = newNotes;
+      if(myA) myA.notes = newNotes;
+      const notesEl = document.getElementById(`cnts-${dbId}`);
+      if(notesEl){
+        notesEl.textContent = clean(newNotes);
+        notesEl.style.display = newNotes ? 'block' : 'none';
+      }
+      if(editEl) editEl.style.display='none';
+      showToast('✦ Battle notes updated.');
+    }).catch(()=>{ sb.disabled=false; sb.textContent='✓ Save'; });
+  }
+
   if(db){
     const dbId=+db.dataset.del;
     if(!confirm('Remove this army from the chronicle?')) return;
