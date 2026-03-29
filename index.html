@@ -2044,7 +2044,7 @@ function mkUnitCard(u={}){
         </div>
         <div class="upgrades-list" id="${id}-upgs">${upgHtml}</div>
       </div>
-      <div class="uc-field" style="margin-top:.5rem">
+      <div class="uc-field" style="margin-top:.5rem;display:none">
         <label>Notes</label>
         <textarea class="u-notes" rows="2" placeholder="Command group, movement tray, colour scheme…">${u.notes||''}</textarea>
       </div>
@@ -3423,7 +3423,7 @@ function mkOppUnitCard(u={}){
         <div class="upgrades-lbl">Upgrades &amp; Options<button type="button" class="add-upgrade-btn" data-card="${id}">+ Add option</button></div>
         <div class="upgrades-list" id="${id}-upgs">${upgHtml}</div>
       </div>
-      <div class="uc-field" style="margin-top:.5rem">
+      <div class="uc-field" style="margin-top:.5rem;display:none">
         <label>Notes</label>
         <textarea class="u-notes" rows="2" placeholder="Command group, movement tray…">${u.notes||''}</textarea>
       </div>
