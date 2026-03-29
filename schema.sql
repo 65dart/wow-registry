@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS event_participants (
   username   TEXT    NOT NULL,
   faction    TEXT    DEFAULT '',
   army_name  TEXT    DEFAULT '',
+  units      TEXT    DEFAULT '[]',  -- JSON array of unit objects
   wins       INTEGER NOT NULL DEFAULT 0,
   losses     INTEGER NOT NULL DEFAULT 0,
   draws      INTEGER NOT NULL DEFAULT 0,

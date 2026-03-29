@@ -347,12 +347,12 @@ export default {
       const evt = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(eid).first();
       if (!evt) return err('Event not found.', 404, origin, env);
       if (evt.status !== 'open') return err('This event is no longer accepting registrations.', 400, origin, env);
-      const { faction, army_name } = await request.json().catch(() => ({}));
+      const { faction, army_name, units } = await request.json().catch(() => ({}));
       try {
         await env.DB.prepare(
-          `INSERT INTO event_participants (event_id, user_id, username, faction, army_name)
-           VALUES (?, ?, ?, ?, ?)`
-        ).bind(eid, user.user_id, user.username, faction||'', army_name||'').run();
+          `INSERT INTO event_participants (event_id, user_id, username, faction, army_name, units)
+           VALUES (?, ?, ?, ?, ?, ?)`
+        ).bind(eid, user.user_id, user.username, faction||'', army_name||'', JSON.stringify(units||[])).run();
       } catch(e) {
         return err('You have already joined this event.', 409, origin, env);
       }

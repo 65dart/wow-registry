@@ -2642,6 +2642,16 @@ function renderEventDetail(data){
   if(event.status === 'open' && !isParticipant){
     html += `<div class="panel" id="ev-join-form" style="display:none;margin-top:1rem;">
       <div class="ptitle">Join This Event</div>
+      <div style="margin-bottom:.9rem;">
+        <label style="font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:.4rem;">Import Army (optional)</label>
+        <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+          <label id="ev-join-import-label" style="font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);border:1px solid rgba(201,168,76,.25);padding:.3rem .8rem;border-radius:3px;cursor:pointer;transition:all .2s;">
+            ↑ Import OWB JSON
+            <input type="file" id="ev-join-import-input" accept=".json" style="display:none">
+          </label>
+          <span id="ev-join-import-status" style="font-size:.78rem;color:var(--text-muted);font-style:italic;"></span>
+        </div>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem;">
         <div class="ff"><label>Your Army Name</label><input type="text" id="ev-join-army" placeholder="e.g. The Iron Legion"></div>
         <div class="ff"><label>Faction</label>
@@ -2651,7 +2661,7 @@ function renderEventDetail(data){
           </select>
         </div>
       </div>
-      <button class="subbtn" id="ev-join-confirm-btn" style="font-size:.78rem;">⚔ Confirm Registration</button>
+      <button class="subbtn" id="ev-join-confirm-btn" style="font-size:.78rem;width:100%;">⚔ Confirm Registration</button>
     </div>`;
   }
 
@@ -2672,15 +2682,50 @@ function wireEventDetailButtons(event, participants){
     if(form) form.style.display = form.style.display==='none' ? 'block' : 'none';
   });
 
+  // OWB JSON import for join form
+  let evJoinImportedUnits = [];
+  document.getElementById('ev-join-import-input')?.addEventListener('change', function(){
+    if(!this.files[0]) return;
+    const file = this.files[0];
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const json = JSON.parse(e.target.result);
+        const units = parseImportJSON(json);
+        const meta  = extractMeta(json);
+        if(!units || !units.length){ showToast('⚠ No units found in that file.',true); return; }
+        evJoinImportedUnits = units;
+        // Auto-fill army name and faction
+        const armyInput = document.getElementById('ev-join-army');
+        const facSel    = document.getElementById('ev-join-faction');
+        if(meta.name && armyInput && !armyInput.value) armyInput.value = meta.name;
+        if(meta.faction && facSel){
+          const match = [...facSel.options].find(o =>
+            o.value.toLowerCase() === meta.faction.toLowerCase() ||
+            o.text.toLowerCase()  === meta.faction.toLowerCase()
+          );
+          if(match) facSel.value = match.value;
+        }
+        const statusEl = document.getElementById('ev-join-import-status');
+        if(statusEl) statusEl.textContent = `✦ ${units.length} units imported from ${file.name}`;
+        showToast(`✦ Imported ${units.length} unit${units.length!==1?'s':''} from ${file.name}`);
+      } catch(err){ showToast('⚠ Could not read that file.',true); }
+    };
+    reader.readAsText(file);
+    this.value = '';
+  });
+
   // Confirm join
   document.getElementById('ev-join-confirm-btn')?.addEventListener('click', async () => {
     const army_name = document.getElementById('ev-join-army')?.value.trim()||'';
     const faction   = document.getElementById('ev-join-faction')?.value||'';
     try {
       const res = await fetch(`${API}/api/events/${event.id}/join`, {
-        method:'POST', headers:apiHeaders(), body:JSON.stringify({faction, army_name})
+        method:'POST', headers:apiHeaders(),
+        body:JSON.stringify({faction, army_name, units: evJoinImportedUnits})
       });
       if(!res.ok){ const d=await res.json(); showToast(d.error||'Could not join.',true); return; }
+      evJoinImportedUnits = [];
       showToast('✦ You have joined the event!');
       openEvent(event.id);
     } catch(e){ showToast('⚠ Could not join event.',true); }
