@@ -2762,7 +2762,7 @@ function renderEventDetail(data){
     html += `<div class="panel" id="ev-join-form" style="display:none;margin-top:1rem;">
       <div class="ptitle">Join This Event</div>
       <div style="margin-bottom:.9rem;">
-        <label style="font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:.4rem;">Import Army (optional)</label>
+        <label style="font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:.4rem;">Import Army <span style="color:#d46060;">*</span> <span style="font-size:.58rem;opacity:.7">(required)</span></label>
         <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
           <label id="ev-join-import-label" style="font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);border:1px solid rgba(201,168,76,.25);padding:.3rem .8rem;border-radius:3px;cursor:pointer;transition:all .2s;">
             ↑ Import OWB JSON
@@ -2814,6 +2814,9 @@ function wireEventDetailButtons(event, participants){
         const meta  = extractMeta(json);
         if(!units || !units.length){ showToast('⚠ No units found in that file.',true); return; }
         evJoinImportedUnits = units;
+        // Reset any error highlight on the import label
+        const lbl = document.getElementById('ev-join-import-label');
+        if(lbl){ lbl.style.borderColor=''; lbl.style.color=''; }
         // Auto-fill army name and faction
         const armyInput = document.getElementById('ev-join-army');
         const facSel    = document.getElementById('ev-join-faction');
@@ -2836,6 +2839,13 @@ function wireEventDetailButtons(event, participants){
 
   // Confirm join
   document.getElementById('ev-join-confirm-btn')?.addEventListener('click', async () => {
+    // JSON import is mandatory
+    if(!evJoinImportedUnits || !evJoinImportedUnits.length){
+      showToast('⚠ Please import your army JSON file before joining.', true);
+      const lbl = document.getElementById('ev-join-import-label');
+      if(lbl){ lbl.style.borderColor='#d46060'; lbl.style.color='#d46060'; }
+      return;
+    }
     const army_name = document.getElementById('ev-join-army')?.value.trim()||'';
     const faction   = document.getElementById('ev-join-faction')?.value||'';
     try {
