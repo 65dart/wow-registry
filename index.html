@@ -1343,9 +1343,16 @@ function getList(){
   return list;
 }
 
+function isPrivileged(){ 
+  const PRIVILEGED=['admin','administrator','mod','moderator'];
+  return PRIVILEGED.includes((authUser||'').toLowerCase());
+}
+
 function mkCard(a){
   const fc=FCSS[a.faction]||'';
   const isL=liked.has(a.id);
+  const isOwner = a.player === authUser || (a._owner && a._owner === authUser);
+  const canDelete = isOwner || isPrivileged();
   return `<div class="ac" id="ac-${a.id}">
     <div class="ctop">
       <div>
@@ -1370,7 +1377,7 @@ function mkCard(a){
       <span class="cdt">${fmtD(a.date)}</span>
       <div class="cact">
         <button class="lbtn${isL?' liked':''}" data-id="${a.id}">♥ <span>${a.likes}</span></button>
-        <button class="dbtn" data-del="${a.id}">✕</button>
+        ${canDelete?`<button class="dbtn" data-del="${a.id}" title="${isOwner?'Delete your record':'Delete record (admin)'}">✕</button>`:''}
       </div>
     </div>
   </div>`;
@@ -1400,7 +1407,7 @@ document.getElementById('cards').addEventListener('click',function(e){
   if(db){
     const id=+db.dataset.del;
     if(!confirm('Remove this army from the chronicle?')) return;
-    const army=myArmies.find(a=>a.id===id);
+    const army=armies.find(a=>a.id===id) || myArmies.find(a=>a.id===id);
     armies=armies.filter(a=>a.id!==id);
     myArmies=myArmies.filter(a=>a.id!==id);
     if(army) deleteArmy(army);

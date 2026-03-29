@@ -260,10 +260,14 @@ export default {
     const delMatch = path.match(/^\/api\/armies\/(\d+)$/);
     if (delMatch && method === 'DELETE') {
       const dbId = parseInt(delMatch[1]);
+      const PRIVILEGED = ['admin','administrator','mod','moderator'];
+      const isPrivileged = PRIVILEGED.includes((user.username||'').toLowerCase());
 
-      const existing = await env.DB.prepare(
-        'SELECT id FROM armies WHERE id = ? AND user_id = ?'
-      ).bind(dbId, user.user_id).first();
+      // Privileged users can delete any army; others only their own
+      const existing = isPrivileged
+        ? await env.DB.prepare('SELECT id FROM armies WHERE id = ?').bind(dbId).first()
+        : await env.DB.prepare('SELECT id FROM armies WHERE id = ? AND user_id = ?').bind(dbId, user.user_id).first();
+
       if (!existing) return err('Army not found.', 404, origin, env);
 
       await env.DB.prepare('DELETE FROM armies WHERE id = ?').bind(dbId).run();
