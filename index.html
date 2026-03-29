@@ -1585,7 +1585,14 @@ document.getElementById('cards').addEventListener('click',function(e){
     else{ liked.add(dbId); a.likes++; lb.classList.add('liked'); }
     if(myA) myA.likes=a.likes;
     lb.querySelector('span').textContent=a.likes;
-    saveArmy(a);
+    // Use dedicated like endpoint so any user can like any army
+    if(authToken && authToken !== 'local-dev-token' && a._dbId){
+      fetch(`${API}/api/armies/${a._dbId}/like`, {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify({ likes: a.likes })
+      }).catch(()=>{});
+    }
   }
   if(db){
     const dbId=+db.dataset.del;

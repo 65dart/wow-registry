@@ -323,6 +323,24 @@ export default {
       return json({ ok: true, dbId: result.meta.last_row_id }, 201, origin, env);
     }
 
+    // ── POST /api/armies/:id/like — toggle like on any army ──
+    const likeMatch = path.match(/^\/api\/armies\/(\d+)\/like$/);
+    if (likeMatch && method === 'POST') {
+      const dbId = parseInt(likeMatch[1]);
+      const { likes } = await request.json().catch(() => ({}));
+      if (likes === undefined) return err('likes value required.', 400, origin, env);
+
+      const existing = await env.DB.prepare('SELECT id, data FROM armies WHERE id = ?').bind(dbId).first();
+      if (!existing) return err('Army not found.', 404, origin, env);
+
+      const data = JSON.parse(existing.data || '{}');
+      data.likes = Math.max(0, parseInt(likes) || 0);
+      await env.DB.prepare("UPDATE armies SET data = ?, updated_at = datetime('now') WHERE id = ?")
+        .bind(JSON.stringify(data), dbId).run();
+
+      return json({ ok: true, likes: data.likes }, 200, origin, env);
+    }
+
     // ── PUT /api/armies/:id — update an existing army ──
     const putMatch = path.match(/^\/api\/armies\/(\d+)$/);
     if (putMatch && method === 'PUT') {
