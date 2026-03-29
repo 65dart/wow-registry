@@ -1553,7 +1553,7 @@ function mkCard(a){
     <div class="crr">
       ${badge(a.result)}
       ${a.opponent?`<span style="font-size:.8rem;color:var(--text-muted)">${factionIconEl(a.opponent,18)} vs ${a.opponent}</span>`:''}
-      ${a.event?`<span class="cev">${clean(a.event)}</span>`:''}
+      ${a.event?`<span class="cev" style="display:inline-flex;align-items:center;gap:.3rem;font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.06em;padding:.18rem .55rem;border:1px solid rgba(201,168,76,.3);border-radius:2px;color:var(--gold);background:rgba(201,168,76,.07);">⚔ ${clean(a.event)}</span>`:''}
     </div>
     ${a.notes?`<div class="cnts" id="cnts-${a._dbId}">${clean(a.notes)}</div>`:`<div class="cnts" id="cnts-${a._dbId}" style="display:none"></div>`}
     <div id="cnts-edit-${a._dbId}" style="display:none;margin-top:.65rem;padding-top:.65rem;border-top:1px solid rgba(201,168,76,.1);">
@@ -2438,7 +2438,7 @@ function renderAdminRecords(){
             <span style="opacity:.4">·</span>${badge(a.result)}
             <span style="opacity:.4">·</span><span>${a.points.toLocaleString()} pts</span>
             <span style="opacity:.4">·</span><span>${fmtD(a.date)}</span>
-            ${a.event?`<span style="opacity:.4">·</span><em>${clean(a.event)}</em>`:''}
+            ${a.event?`<span style="opacity:.4">·</span><span style="font-family:'Cinzel',serif;font-size:.65rem;padding:.12rem .45rem;border:1px solid rgba(201,168,76,.3);border-radius:2px;color:var(--gold);background:rgba(201,168,76,.07);">⚔ ${clean(a.event)}</span>`:''}
           </div>
           ${a.notes?`<div style="font-size:.82rem;color:var(--parchment-dark);font-style:italic;margin-top:.75rem;padding-top:.65rem;border-top:1px solid rgba(201,168,76,.1);line-height:1.6;">${clean(a.notes)}</div>`:''}
         </div>
