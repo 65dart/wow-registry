@@ -1244,7 +1244,23 @@ function onAuthSuccess(data) {
     plField.style.opacity = '0.7';
     plField.style.cursor  = 'default';
   }
-  load();
+  load().then(() => {
+    // Check for pending event from deep link (stored before login)
+    const pendingEvent = sessionStorage.getItem('pending_event');
+    if (pendingEvent) {
+      sessionStorage.removeItem('pending_event');
+      document.querySelector('[data-page="events"]')?.click();
+      openEvent(+pendingEvent);
+    }
+    // Also check URL param in case user landed logged in
+    const urlParams = new URLSearchParams(window.location.search);
+    const deepEventId = urlParams.get('event');
+    if (deepEventId && !pendingEvent) {
+      document.querySelector('[data-page="events"]')?.click();
+      openEvent(+deepEventId);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  });
 }
 
 async function doLogout() {
@@ -2598,6 +2614,7 @@ function renderEventDetail(data){
         ${event.status==='open' && isParticipant && !isOrganiser ? `<button class="subbtn" id="ev-leave-btn" style="font-size:.75rem;padding:.4rem .9rem;border-color:rgba(180,60,60,.4);color:#d46060;">Leave</button>` : ''}
         ${isOrganiser && event.status==='open' ? `<button class="subbtn" id="ev-close-reg-btn" style="font-size:.75rem;padding:.4rem .9rem;">Close Registration</button>` : ''}
         ${(isOrganiser || isPrivileged()) && (event.status==='active' || event.status==='complete') ? `<button class="subbtn" id="ev-reopen-reg-btn" style="font-size:.75rem;padding:.4rem .9rem;border-color:rgba(106,175,106,.4);color:#6aaf6a;">↺ Reopen Registration</button>` : ''}
+        <button class="subbtn" id="ev-share-btn" data-evid="${event.id}" style="font-size:.75rem;padding:.4rem .9rem;border-color:rgba(201,168,76,.3);color:var(--text-muted);">🔗 Share Link</button>
         ${(isOrganiser || isPrivileged()) ? `<button class="subbtn" id="ev-delete-btn" style="font-size:.75rem;padding:.4rem .9rem;border-color:rgba(180,60,60,.4);color:#d46060;">Delete Event</button>` : ''}
       </div>
     </div>`;
@@ -2904,6 +2921,18 @@ function wireEventDetailButtons(event, participants){
     await fetch(`${API}/api/events/${event.id}/leave`, { method:'POST', headers:apiHeaders() });
     showToast('You have left the event.');
     openEvent(event.id);
+  });
+
+  // Share link
+  document.getElementById('ev-share-btn')?.addEventListener('click', function(){
+    const eventId = this.dataset.evid;
+    const url = `${window.location.origin}${window.location.pathname}?event=${eventId}`;
+    navigator.clipboard.writeText(url).then(()=>{
+      showToast('✦ Event link copied to clipboard!');
+    }).catch(()=>{
+      // Fallback — show the URL in a prompt so they can copy manually
+      prompt('Copy this link to share the event:', url);
+    });
   });
 
   // Reopen registration
@@ -4001,8 +4030,25 @@ buildFacSelect(document.getElementById('opp-fac-comp'),'Select faction…');
 
 // Auto-load if session token exists
 if (authToken) {
-  load();
+  load().then(() => {
+    // Check for event deep link ?event=ID
+    const urlParams = new URLSearchParams(window.location.search);
+    const deepEventId = urlParams.get('event');
+    if (deepEventId) {
+      // Navigate to Events tab and open the event
+      document.querySelector('[data-page="events"]')?.click();
+      openEvent(+deepEventId);
+      // Clean up URL without reloading
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  });
 } else {
+  // Not logged in — store event ID for after login
+  const urlParams = new URLSearchParams(window.location.search);
+  const deepEventId = urlParams.get('event');
+  if (deepEventId) {
+    sessionStorage.setItem('pending_event', deepEventId);
+  }
   renderCards();
 }
 
