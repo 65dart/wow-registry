@@ -844,6 +844,12 @@ select option{background:#1a1208;}
 
 <div class="toast" id="toast"></div>
 
+<footer style="text-align:center;padding:1.2rem 1rem;margin-top:2rem;border-top:1px solid rgba(201,168,76,.1);font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);">
+  <span>Warhammer: The Old World — BattleMarch Registry</span>
+  <span style="margin:0 .75rem;opacity:.3">·</span>
+  <span>⚔ <span id="visitor-count">—</span> Commanders Have Visited</span>
+</footer>
+
 <script>
 const SK='wow_v8';
 const FCSS={
@@ -3814,7 +3820,6 @@ if (authToken) {
   let visitorId = localStorage.getItem(SK_VID);
   const isNew = !visitorId;
 
-  // Generate a new visitor ID if none exists
   if(isNew){
     visitorId = 'v_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,9);
     localStorage.setItem(SK_VID, visitorId);
@@ -3823,7 +3828,6 @@ if (authToken) {
   try {
     let count;
     if(isNew){
-      // New visitor — POST to register and get updated count
       const res = await fetch(`${API}/api/visit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3832,7 +3836,6 @@ if (authToken) {
       const data = await res.json();
       count = data.count;
     } else {
-      // Returning visitor — just GET the count
       const res = await fetch(`${API}/api/visit`);
       const data = await res.json();
       count = data.count;
@@ -3842,11 +3845,5 @@ if (authToken) {
   } catch(e){}
 })();
 </script>
-
-<footer style="text-align:center;padding:1.2rem 1rem;margin-top:2rem;border-top:1px solid rgba(201,168,76,.1);font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);">
-  <span>Warhammer: The Old World — BattleMarch Registry</span>
-  <span style="margin:0 .75rem;opacity:.3">·</span>
-  <span>⚔ <span id="visitor-count">—</span> Commanders Have Visited</span>
-</footer>
 </body>
 </html>
