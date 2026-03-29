@@ -279,6 +279,29 @@ export default {
       return json({ username: user.username, email: user.email, userId: user.user_id }, 200, origin, env);
     }
 
+    // ── GET /api/admin/stats — admin statistics (privileged only) ──
+    if (path === '/api/admin/stats' && method === 'GET') {
+      const PRIVILEGED = ['admin','administrator','mod','moderator'];
+      if (!PRIVILEGED.includes((user.username||'').toLowerCase()))
+        return err('Forbidden.', 403, origin, env);
+
+      const totalUsers   = await env.DB.prepare('SELECT COUNT(*) as c FROM users').first();
+      const totalArmies  = await env.DB.prepare('SELECT COUNT(*) as c FROM armies').first();
+      const totalEvents  = await env.DB.prepare('SELECT COUNT(*) as c FROM events').first();
+      const activeEvents = await env.DB.prepare("SELECT COUNT(*) as c FROM events WHERE status='active'").first();
+      const newToday     = await env.DB.prepare("SELECT COUNT(*) as c FROM users WHERE created_at >= date('now')").first();
+      const newThisWeek  = await env.DB.prepare("SELECT COUNT(*) as c FROM users WHERE created_at >= date('now','-7 days')").first();
+
+      return json({
+        total_users:    totalUsers.c,
+        total_armies:   totalArmies.c,
+        total_events:   totalEvents.c,
+        active_events:  activeEvents.c,
+        new_today:      newToday.c,
+        new_this_week:  newThisWeek.c,
+      }, 200, origin, env);
+    }
+
     // ══════════════════════════════════════════
     //  EVENTS
     // ══════════════════════════════════════════

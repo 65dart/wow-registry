@@ -736,6 +736,37 @@ select option{background:#1a1208;}
 <div class="page" id="page-admin">
   <div style="max-width:900px;margin:0 auto;">
 
+    <!-- Site Statistics -->
+    <div class="panel" style="margin-bottom:1.5rem">
+      <div class="ptitle">📊 Site Statistics</div>
+      <div id="admin-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.8rem;margin-top:.4rem;">
+        <div style="text-align:center;padding:.75rem;background:rgba(0,0,0,.2);border-radius:3px;">
+          <div style="font-family:'Cinzel',serif;font-size:1.6rem;color:var(--gold);font-weight:700;" id="stat-users">—</div>
+          <div style="font-size:.7rem;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-top:.2rem;">Registered Users</div>
+        </div>
+        <div style="text-align:center;padding:.75rem;background:rgba(0,0,0,.2);border-radius:3px;">
+          <div style="font-family:'Cinzel',serif;font-size:1.6rem;color:var(--gold);font-weight:700;" id="stat-armies">—</div>
+          <div style="font-size:.7rem;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-top:.2rem;">Army Records</div>
+        </div>
+        <div style="text-align:center;padding:.75rem;background:rgba(0,0,0,.2);border-radius:3px;">
+          <div style="font-family:'Cinzel',serif;font-size:1.6rem;color:var(--gold);font-weight:700;" id="stat-events">—</div>
+          <div style="font-size:.7rem;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-top:.2rem;">Total Events</div>
+        </div>
+        <div style="text-align:center;padding:.75rem;background:rgba(0,0,0,.2);border-radius:3px;">
+          <div style="font-family:'Cinzel',serif;font-size:1.6rem;color:var(--gold);font-weight:700;" id="stat-active-events">—</div>
+          <div style="font-size:.7rem;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-top:.2rem;">Active Events</div>
+        </div>
+        <div style="text-align:center;padding:.75rem;background:rgba(0,0,0,.2);border-radius:3px;">
+          <div style="font-family:'Cinzel',serif;font-size:1.6rem;color:var(--gold);font-weight:700;" id="stat-new-today">—</div>
+          <div style="font-size:.7rem;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-top:.2rem;">New Today</div>
+        </div>
+        <div style="text-align:center;padding:.75rem;background:rgba(0,0,0,.2);border-radius:3px;">
+          <div style="font-family:'Cinzel',serif;font-size:1.6rem;color:var(--gold);font-weight:700;" id="stat-new-week">—</div>
+          <div style="font-size:.7rem;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-top:.2rem;">New This Week</div>
+        </div>
+      </div>
+    </div>
+
     <!-- User Browser -->
     <div class="panel" style="margin-bottom:1.5rem">
       <div class="ptitle">👤 User Records</div>
@@ -3002,6 +3033,18 @@ function renderAdmin(){
       .then(d => { eventsData = d.events||[]; renderAdminEvents(); })
       .catch(() => renderAdminEvents());
   }
+  // Fetch site stats
+  fetch(`${API}/api/admin/stats`, { headers: apiHeaders() })
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('stat-users').textContent        = d.total_users   ?? '—';
+      document.getElementById('stat-armies').textContent       = d.total_armies  ?? '—';
+      document.getElementById('stat-events').textContent       = d.total_events  ?? '—';
+      document.getElementById('stat-active-events').textContent= d.active_events ?? '—';
+      document.getElementById('stat-new-today').textContent    = d.new_today     ?? '—';
+      document.getElementById('stat-new-week').textContent     = d.new_this_week ?? '—';
+    })
+    .catch(() => {});
 }
 
 function renderRosters(){
