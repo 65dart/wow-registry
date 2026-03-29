@@ -2545,11 +2545,62 @@ function renderEventDetail(data){
         // Organiser approve controls
         let approveHtml = '';
         if(isOrganiser && pending){
-          approveHtml = `<div style="display:flex;gap:.4rem;margin-top:.5rem;flex-wrap:wrap;">
-            <span style="font-size:.68rem;color:var(--text-muted);align-self:center;">Approve:</span>
-            <button class="subbtn ev-approve-result" data-pid="${p.id}" data-result="player1" style="font-size:.68rem;padding:.25rem .55rem;border-color:#6aaf6a;color:#6aaf6a;">${clean(p.player1_name)} Wins</button>
-            <button class="subbtn ev-approve-result" data-pid="${p.id}" data-result="draw" style="font-size:.68rem;padding:.25rem .55rem;border-color:var(--gold);color:var(--gold);">Draw</button>
-            <button class="subbtn ev-approve-result" data-pid="${p.id}" data-result="player2" style="font-size:.68rem;padding:.25rem .55rem;border-color:#6aaf6a;color:#6aaf6a;">${clean(p.player2_name)} Wins</button>
+          // Work out what each player submitted as a canonical result
+          // player1_submitted is from p1's perspective: 'player1'=p1 won, 'player2'=p2 won, 'draw'
+          // player2_submitted is from p2's perspective: 'player2'=p2 won, 'player1'=p1 won, 'draw'
+          // Normalise both to canonical form (player1/player2/draw)
+          const p1sub = p.player1_submitted || null;  // already canonical
+          const p2sub = p.player2_submitted || null;  // already canonical (submitted from p2 view, stored as canonical)
+
+          // Determine if submissions agree
+          const bothAgree = p1sub && p2sub && p1sub === p2sub;
+          const disagreement = p1sub && p2sub && p1sub !== p2sub;
+
+          // Label each button with submission indicators
+          function subIndicator(result){
+            const p1says = p1sub === result;
+            const p2says = p2sub === result;
+            if(!p1sub && !p2sub) return '';
+            let tags = '';
+            if(p1says) tags += `<span style="font-size:.6rem;background:rgba(106,175,106,.2);color:#6aaf6a;padding:.1rem .3rem;border-radius:2px;margin-left:.3rem;">${clean(p.player1_name)}</span>`;
+            if(p2says) tags += `<span style="font-size:.6rem;background:rgba(106,175,106,.2);color:#6aaf6a;padding:.1rem .3rem;border-radius:2px;margin-left:.2rem;">${clean(p.player2_name)}</span>`;
+            return tags;
+          }
+
+          function btnHighlight(result){
+            // Highlight gold if both agree on this result, green if one player says this
+            if(bothAgree && p1sub === result) return 'background:rgba(201,168,76,.15);border-color:var(--gold);color:var(--gold);font-weight:700;';
+            if((p1sub === result || p2sub === result) && !bothAgree) return 'background:rgba(106,175,106,.08);border-color:#6aaf6a;color:#6aaf6a;';
+            return 'border-color:rgba(201,168,76,.2);color:var(--text-muted);';
+          }
+
+          const agreeNote = bothAgree
+            ? `<span style="font-size:.7rem;color:#6aaf6a;font-style:italic;">✓ Both players agree</span>`
+            : disagreement
+              ? `<span style="font-size:.7rem;color:#d46060;font-style:italic;">⚠ Players disagree</span>`
+              : p1sub || p2sub
+                ? `<span style="font-size:.7rem;color:var(--text-muted);font-style:italic;">Waiting for other player…</span>`
+                : '';
+
+          approveHtml = `<div style="margin-top:.6rem;">
+            <div style="display:flex;gap:.35rem;align-items:center;margin-bottom:.4rem;flex-wrap:wrap;">
+              <span style="font-size:.68rem;color:var(--text-muted);font-family:'Cinzel',serif;letter-spacing:.06em;">APPROVE:</span>
+              ${agreeNote}
+            </div>
+            <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
+              <button class="subbtn ev-approve-result" data-pid="${p.id}" data-result="player1"
+                style="font-size:.68rem;padding:.3rem .7rem;${btnHighlight('player1')}">
+                ${clean(p.player1_name)} Wins${subIndicator('player1')}
+              </button>
+              <button class="subbtn ev-approve-result" data-pid="${p.id}" data-result="draw"
+                style="font-size:.68rem;padding:.3rem .7rem;${btnHighlight('draw')}">
+                Draw${subIndicator('draw')}
+              </button>
+              <button class="subbtn ev-approve-result" data-pid="${p.id}" data-result="player2"
+                style="font-size:.68rem;padding:.3rem .7rem;${btnHighlight('player2')}">
+                ${clean(p.player2_name)} Wins${subIndicator('player2')}
+              </button>
+            </div>
           </div>`;
         }
 
