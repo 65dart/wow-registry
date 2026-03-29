@@ -622,14 +622,31 @@ select option{background:#1a1208;}
 
 <!-- ADMIN -->
 <div class="page" id="page-admin">
-  <div style="max-width:600px;margin:0 auto;">
+  <div style="max-width:900px;margin:0 auto;">
+
+    <!-- User Browser -->
+    <div class="panel" style="margin-bottom:1.5rem">
+      <div class="ptitle">👤 User Records</div>
+      <div style="display:flex;gap:.6rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap;">
+        <input type="text" id="admin-user-search" placeholder="Search by username…" style="flex:1;min-width:180px;" oninput="renderAdminRecords()">
+        <select id="admin-user-select" style="flex:1;min-width:180px;" onchange="renderAdminRecords()">
+          <option value="">All Users</option>
+        </select>
+        <span id="admin-record-count" style="font-family:'Cinzel',serif;font-size:.7rem;color:var(--text-muted);white-space:nowrap;"></span>
+      </div>
+      <div id="admin-records"></div>
+    </div>
+
+    <!-- Data Management -->
     <div class="panel" style="margin-bottom:1.5rem">
       <div class="ptitle">⚙ Data Management</div>
-      <p style="font-size:.88rem;color:var(--text-muted);font-style:italic;margin-bottom:1.2rem;">Export a full JSON backup of all community army records, or delete your own records.</p>
+      <p style="font-size:.88rem;color:var(--text-muted);font-style:italic;margin-bottom:1.2rem;">Export a full JSON backup of all community army records.</p>
       <div style="display:flex;gap:.6rem;">
         <button class="subbtn" id="exp-btn" style="flex:1;font-size:.78rem;padding:.6rem;">↓ Export All Records (JSON)</button>
       </div>
     </div>
+
+    <!-- Danger Zone -->
     <div class="panel" style="border-color:rgba(180,60,60,.3)">
       <div class="ptitle" style="color:#d46060;">⚠ Danger Zone</div>
       <p style="font-size:.88rem;color:var(--text-muted);font-style:italic;margin-bottom:1.2rem;">Permanently delete all of your own army records from the database. This cannot be undone.</p>
@@ -2140,6 +2157,98 @@ function mkRosterCard(a){
   </div>`;
 }
 
+// ── ADMIN USER BROWSER ──
+function populateAdminUserSelect(){
+  const sel = document.getElementById('admin-user-select');
+  if(!sel) return;
+  const current = sel.value;
+  const users = [...new Set(armies.map(a => a.player||a._owner||'').filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">All Users</option>' +
+    users.map(u => `<option${u===current?' selected':''}>${u}</option>`).join('');
+}
+
+function renderAdminRecords(){
+  const container = document.getElementById('admin-records');
+  const countEl   = document.getElementById('admin-record-count');
+  if(!container) return;
+
+  const srch    = (document.getElementById('admin-user-search')?.value||'').toLowerCase().trim();
+  const userSel = document.getElementById('admin-user-select')?.value||'';
+
+  // Filter armies by search or user select
+  let list = armies.filter(a => {
+    const player = (a.player||a._owner||'').toLowerCase();
+    if(userSel && (a.player||a._owner) !== userSel) return false;
+    if(srch && !player.includes(srch)) return false;
+    return true;
+  });
+
+  // Sort newest first
+  list = list.slice().sort((a,b) => (b.date||'').localeCompare(a.date||''));
+
+  countEl.textContent = list.length ? `${list.length} record${list.length!==1?'s':''}` : '';
+
+  if(!list.length){
+    container.innerHTML = `<div style="text-align:center;color:var(--text-muted);font-style:italic;padding:1.5rem;">No records found.</div>`;
+    return;
+  }
+
+  container.innerHTML = list.map(a => {
+    const fc = FCSS[a.faction]||'';
+    const player = a.player||a._owner||'Unknown';
+    return `<div class="ac" style="margin-bottom:.65rem;padding:.75rem 1rem;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;">
+        <div style="min-width:0">
+          <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">
+            <span class="cft ${fc}" style="display:inline-flex;align-items:center;gap:.3rem;font-size:.58rem">${factionIconEl(a.faction,14)}${a.faction}</span>
+            <span style="font-family:'Cinzel',serif;font-size:.82rem;color:var(--parchment)">${clean(a.name)}</span>
+          </div>
+          <div style="font-size:.8rem;color:var(--text-muted);margin-top:.2rem;">
+            by <strong style="color:var(--aged)">${clean(player)}</strong>
+            · ${badge(a.result)}
+            · ${a.points.toLocaleString()} pts
+            · ${fmtD(a.date)}
+            ${a.event?`· <em>${clean(a.event)}</em>`:''}
+          </div>
+          ${a.notes?`<div style="font-size:.8rem;color:var(--parchment-dark);font-style:italic;margin-top:.25rem;opacity:.8">${clean(a.notes)}</div>`:''}
+        </div>
+        <button class="dbtn admin-del-btn" data-del="${a.id}" title="Delete this record"
+          style="flex-shrink:0;font-size:.72rem;padding:.3rem .6rem;">✕ Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Wire delete buttons
+  container.querySelectorAll('.admin-del-btn').forEach(btn => {
+    btn.addEventListener('click', async function(){
+      const id = +this.dataset.del;
+      const army = armies.find(a => a.id === id);
+      const name = army ? clean(army.name) : 'this record';
+      if(!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+      this.disabled = true;
+      this.textContent = '…';
+      try {
+        await deleteArmy(army||{_dbId: id});
+        armies    = armies.filter(a => a.id !== id);
+        myArmies  = myArmies.filter(a => a.id !== id);
+        renderAdminRecords();
+        renderCards();
+        showToast('✦ Record deleted.');
+      } catch(e) {
+        this.disabled = false;
+        this.textContent = '✕ Delete';
+        showToast('⚠ Could not delete record.', true);
+      }
+    });
+  });
+}
+
+// Refresh admin panel when navigating to it
+function renderAdmin(){
+  populateAdminUserSelect();
+  renderAdminRecords();
+}
+
 function renderRosters(){
   popRosterFacFilter();
   const list=getRosterList();
@@ -2168,6 +2277,7 @@ document.querySelectorAll('.nt').forEach(btn=>{
     if(this.dataset.page==='charts') renderCharts();
     if(this.dataset.page==='leaderboard') renderLB();
     if(this.dataset.page==='rosters') renderRosters();
+    if(this.dataset.page==='admin') renderAdmin();
   });
 });
 
