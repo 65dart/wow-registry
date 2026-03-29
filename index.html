@@ -2220,6 +2220,7 @@ function mkCompBlock(units, title='Army Composition'){
       const magicStr=u.magic ? clean(u.magic) : '';
       rows+=`<tr>
         <td><span class="type-badge ${tc}">${t}</span></td>
+        <td class="td-models">${u.models||'—'}</td>
         <td>
           <div>${clean(u.name)}</div>
           ${upgStr?`<div class="comp-upgs">${upgStr}</div>`:''}
@@ -2227,7 +2228,6 @@ function mkCompBlock(units, title='Army Composition'){
           ${u.rules?`<div class="comp-upgs" style="color:var(--aged)">${clean(u.rules)}</div>`:''}
           ${u.notes?`<div class="comp-upgs" style="font-style:italic">${clean(u.notes)}</div>`:''}
         </td>
-        <td class="td-models">${u.models||'—'}</td>
         <td class="td-pts">${u.ppm?`<div style="font-size:.7rem;color:var(--text-muted)">${u.ppm} ppm</div>`:''}${(u.total||0).toLocaleString()}</td>
       </tr>`;
     });
@@ -2238,7 +2238,7 @@ function mkCompBlock(units, title='Army Composition'){
       <span class="comp-total">${units.length} unit${units.length!==1?'s':''} · ${totalPts.toLocaleString()} pts</span>
     </div>
     <table class="comp-table">
-      <thead><tr><th>Type</th><th>Unit</th><th style="text-align:center">Models</th><th style="text-align:right">Pts</th></tr></thead>
+      <thead><tr><th>Type</th><th style="text-align:center">Models</th><th>Unit</th><th style="text-align:right">Pts</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
   </div>`;
