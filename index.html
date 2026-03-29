@@ -2596,6 +2596,7 @@ function renderEventDetail(data){
         ${event.status==='open' && !isParticipant ? `<button class="subbtn" id="ev-join-btn" style="font-size:.75rem;padding:.4rem .9rem;">Join Event</button>` : ''}
         ${event.status==='open' && isParticipant && !isOrganiser ? `<button class="subbtn" id="ev-leave-btn" style="font-size:.75rem;padding:.4rem .9rem;border-color:rgba(180,60,60,.4);color:#d46060;">Leave</button>` : ''}
         ${isOrganiser && event.status==='open' ? `<button class="subbtn" id="ev-close-reg-btn" style="font-size:.75rem;padding:.4rem .9rem;">Close Registration</button>` : ''}
+        ${(isOrganiser || isPrivileged()) && (event.status==='active' || event.status==='complete') ? `<button class="subbtn" id="ev-reopen-reg-btn" style="font-size:.75rem;padding:.4rem .9rem;border-color:rgba(106,175,106,.4);color:#6aaf6a;">↺ Reopen Registration</button>` : ''}
         ${(isOrganiser || isPrivileged()) ? `<button class="subbtn" id="ev-delete-btn" style="font-size:.75rem;padding:.4rem .9rem;border-color:rgba(180,60,60,.4);color:#d46060;">Delete Event</button>` : ''}
       </div>
     </div>`;
@@ -2865,6 +2866,17 @@ function wireEventDetailButtons(event, participants){
     if(!confirm('Leave this event?')) return;
     await fetch(`${API}/api/events/${event.id}/leave`, { method:'POST', headers:apiHeaders() });
     showToast('You have left the event.');
+    openEvent(event.id);
+  });
+
+  // Reopen registration
+  document.getElementById('ev-reopen-reg-btn')?.addEventListener('click', async () => {
+    if(!confirm('Reopen registration? Players will be able to join again.')) return;
+    const res = await fetch(`${API}/api/events/${event.id}/update`, {
+      method:'PUT', headers:apiHeaders(), body:JSON.stringify({status:'open'})
+    });
+    if(!res.ok){ showToast('⚠ Could not reopen registration.',true); return; }
+    showToast('✦ Registration reopened. Players can now join again.');
     openEvent(event.id);
   });
 

@@ -457,13 +457,16 @@ export default {
       return json({ event, participants: participants.results||[], pairings: pairings.results||[] }, 200, origin, env);
     }
 
-    // ── PUT /api/events/:id — update event (organiser only) ──
+    // ── PUT /api/events/:id — update event (organiser or admin) ──
     const evtUpdateMatch = path.match(/^\/api\/events\/(\d+)\/update$/);
     if (evtUpdateMatch && method === 'PUT') {
       const eid = parseInt(evtUpdateMatch[1]);
       const evt = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(eid).first();
       if (!evt) return err('Event not found.', 404, origin, env);
-      if (evt.organiser_id !== user.user_id) return err('Only the organiser can update this event.', 403, origin, env);
+      const PRIVILEGED = ['admin','administrator','mod','moderator'];
+      const isPrivileged = PRIVILEGED.includes((user.username||'').toLowerCase());
+      if (evt.organiser_id !== user.user_id && !isPrivileged)
+        return err('Only the organiser or an admin can update this event.', 403, origin, env);
       const { status } = await request.json().catch(() => ({}));
       if (status) await env.DB.prepare('UPDATE events SET status = ? WHERE id = ?').bind(status, eid).run();
       return json({ ok: true }, 200, origin, env);
