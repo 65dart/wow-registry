@@ -1533,7 +1533,7 @@ function isPrivileged(){
 
 function mkCard(a){
   const fc=FCSS[a.faction]||'';
-  const isL=liked.has(a.id);
+  const isL=liked.has(a._dbId);
   const isOwner = a.player === authUser || (a._owner && a._owner === authUser);
   const canDelete = isOwner || isPrivileged();
   return `<div class="ac" id="ac-${a.id}">
@@ -1559,8 +1559,8 @@ function mkCard(a){
     <div class="cfoot">
       <span class="cdt">${fmtD(a.date)}</span>
       <div class="cact">
-        <button class="lbtn${isL?' liked':''}" data-id="${a.id}">♥ <span>${a.likes}</span></button>
-        ${canDelete?`<button class="dbtn" data-del="${a.id}" title="${isOwner?'Delete your record':'Delete record (admin)'}">✕</button>`:''}
+        <button class="lbtn${isL?' liked':''}" data-id="${a._dbId}">♥ <span>${a.likes}</span></button>
+        ${canDelete?`<button class="dbtn" data-del="${a._dbId}" title="${isOwner?'Delete your record':'Delete record (admin)'}">✕</button>`:''}
       </div>
     </div>
   </div>`;
@@ -1578,21 +1578,21 @@ document.getElementById('cards').addEventListener('click',function(e){
   const lb=e.target.closest('.lbtn');
   const db=e.target.closest('.dbtn');
   if(lb){
-    const id=+lb.dataset.id;
-    const a=armies.find(x=>x.id===id); if(!a) return;
-    const myA=myArmies.find(x=>x.id===id);
-    if(liked.has(id)){ liked.delete(id); a.likes=Math.max(0,a.likes-1); lb.classList.remove('liked'); }
-    else{ liked.add(id); a.likes++; lb.classList.add('liked'); }
+    const dbId=+lb.dataset.id;
+    const a=armies.find(x=>x._dbId===dbId); if(!a) return;
+    const myA=myArmies.find(x=>x._dbId===dbId);
+    if(liked.has(dbId)){ liked.delete(dbId); a.likes=Math.max(0,a.likes-1); lb.classList.remove('liked'); }
+    else{ liked.add(dbId); a.likes++; lb.classList.add('liked'); }
     if(myA) myA.likes=a.likes;
     lb.querySelector('span').textContent=a.likes;
     saveArmy(a);
   }
   if(db){
-    const id=+db.dataset.del;
+    const dbId=+db.dataset.del;
     if(!confirm('Remove this army from the chronicle?')) return;
-    const army=armies.find(a=>a.id===id) || myArmies.find(a=>a.id===id);
-    armies=armies.filter(a=>a.id!==id);
-    myArmies=myArmies.filter(a=>a.id!==id);
+    const army=armies.find(a=>a._dbId===dbId) || myArmies.find(a=>a._dbId===dbId);
+    armies=armies.filter(a=>a._dbId!==dbId);
+    myArmies=myArmies.filter(a=>a._dbId!==dbId);
     if(army) deleteArmy(army);
     renderCards(); showToast('Record removed from the chronicle.');
   }
