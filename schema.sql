@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS events (
   total_rounds   INTEGER NOT NULL DEFAULT 3,
   current_round  INTEGER NOT NULL DEFAULT 0,        -- 0 = not started
   points_limit   INTEGER NOT NULL DEFAULT 0,        -- 0 = no limit
+  max_participants INTEGER NOT NULL DEFAULT 0,      -- 0 = no limit
   status         TEXT    NOT NULL DEFAULT 'open',   -- open, active, complete
   created_at     TEXT    NOT NULL DEFAULT (datetime('now'))
 );

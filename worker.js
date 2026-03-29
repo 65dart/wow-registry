@@ -296,14 +296,15 @@ export default {
 
     // ── POST /api/events — create event ──
     if (path === '/api/events' && method === 'POST') {
-      const { name, description, pairing_system, total_rounds, points_limit } = await request.json().catch(() => ({}));
+      const { name, description, pairing_system, total_rounds, points_limit, max_participants } = await request.json().catch(() => ({}));
       if (!name) return err('Event name is required.', 400, origin, env);
-      const rounds = Math.max(1, Math.min(10, parseInt(total_rounds)||3));
-      const pts    = Math.max(0, parseInt(points_limit)||0);
-      const result = await env.DB.prepare(
-        `INSERT INTO events (organiser_id, name, description, pairing_system, total_rounds, points_limit)
-         VALUES (?, ?, ?, ?, ?, ?)`
-      ).bind(user.user_id, name, description||'', pairing_system||'swiss', rounds, pts).run();
+      const rounds  = Math.max(1, Math.min(10, parseInt(total_rounds)||3));
+      const pts     = Math.max(0, parseInt(points_limit)||0);
+      const maxP    = Math.max(0, parseInt(max_participants)||0);
+      const result  = await env.DB.prepare(
+        `INSERT INTO events (organiser_id, name, description, pairing_system, total_rounds, points_limit, max_participants)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+      ).bind(user.user_id, name, description||'', pairing_system||'swiss', rounds, pts, maxP).run();
       return json({ ok: true, eventId: result.meta.last_row_id }, 201, origin, env);
     }
 
@@ -347,6 +348,15 @@ export default {
       const evt = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(eid).first();
       if (!evt) return err('Event not found.', 404, origin, env);
       if (evt.status !== 'open') return err('This event is no longer accepting registrations.', 400, origin, env);
+
+      // Enforce participant limit if set
+      if (evt.max_participants > 0) {
+        const count = await env.DB.prepare(
+          'SELECT COUNT(*) as c FROM event_participants WHERE event_id = ?'
+        ).bind(eid).first();
+        if (count.c >= evt.max_participants)
+          return err(`This event is full (${evt.max_participants} players maximum).`, 400, origin, env);
+      }
       const { faction, army_name, units } = await request.json().catch(() => ({}));
       try {
         await env.DB.prepare(
