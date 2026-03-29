@@ -480,8 +480,9 @@ export default {
 
       const pairing = await env.DB.prepare('SELECT * FROM event_pairings WHERE id = ? AND event_id = ?').bind(pairing_id, eid).first();
       if (!pairing) return err('Pairing not found.', 404, origin, env);
+      if (pairing.approved) return err('Result already approved.', 400, origin, env);
 
-      // Determine if user is p1 or p2
+      // Store submission
       if (pairing.player1_id === user.user_id) {
         await env.DB.prepare('UPDATE event_pairings SET player1_submitted=? WHERE id=?').bind(res, pairing_id).run();
       } else if (pairing.player2_id === user.user_id) {
@@ -489,7 +490,41 @@ export default {
       } else {
         return err('You are not a participant in this pairing.', 403, origin, env);
       }
-      return json({ ok: true }, 200, origin, env);
+
+      // Re-fetch pairing to check if both submissions now agree
+      const updated = await env.DB.prepare('SELECT * FROM event_pairings WHERE id = ?').bind(pairing_id).first();
+      const autoApproved = updated.player1_submitted && updated.player2_submitted &&
+                           updated.player1_submitted === updated.player2_submitted;
+
+      if (autoApproved) {
+        const agreedResult = updated.player1_submitted;
+        await env.DB.prepare('UPDATE event_pairings SET result=?, approved=1 WHERE id=?').bind(agreedResult, pairing_id).run();
+
+        // Update standings
+        const evt = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(eid).first();
+        if (agreedResult === 'player1') {
+          await env.DB.prepare(`UPDATE event_participants SET wins=wins+1, points=points+3 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player1_id).run();
+          await env.DB.prepare(`UPDATE event_participants SET losses=losses+1 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player2_id).run();
+        } else if (agreedResult === 'player2') {
+          await env.DB.prepare(`UPDATE event_participants SET losses=losses+1 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player1_id).run();
+          await env.DB.prepare(`UPDATE event_participants SET wins=wins+1, points=points+3 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player2_id).run();
+        } else {
+          await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player1_id).run();
+          await env.DB.prepare(`UPDATE event_participants SET draws=draws+1, points=points+1 WHERE event_id=? AND user_id=?`).bind(eid, pairing.player2_id).run();
+        }
+
+        // Check if all pairings in round are approved — if last round, complete event
+        const pending = await env.DB.prepare(
+          `SELECT COUNT(*) as c FROM event_pairings WHERE event_id=? AND round=? AND approved=0 AND player2_id IS NOT NULL`
+        ).bind(eid, evt.current_round).first();
+        if (pending.c === 0 && evt.current_round >= evt.total_rounds) {
+          await env.DB.prepare(`UPDATE events SET status='complete' WHERE id=?`).bind(eid).run();
+        }
+
+        return json({ ok: true, autoApproved: true }, 200, origin, env);
+      }
+
+      return json({ ok: true, autoApproved: false }, 200, origin, env);
     }
 
     // ── PUT /api/events/:id/result/:pid — organiser approves/sets result ──

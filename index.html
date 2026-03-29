@@ -2749,7 +2749,12 @@ function wireEventDetailButtons(event, participants){
         method:'POST', headers:apiHeaders(), body:JSON.stringify({pairing_id:pid, result})
       });
       if(!res.ok){ showToast('Could not submit result.',true); return; }
-      showToast('✦ Result submitted — awaiting organiser approval.');
+      const data = await res.json();
+      if(data.autoApproved){
+        showToast('✦ Both players agreed — result automatically confirmed!');
+      } else {
+        showToast('✦ Result submitted — awaiting organiser approval.');
+      }
       openEvent(event.id);
     });
   });
