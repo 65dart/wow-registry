@@ -687,7 +687,17 @@ select option{background:#1a1208;}
         <label>Army Points Limit</label>
         <select id="ev-points">
           <option value="0">No limit</option>
-          ${Array.from({length:11},(_,i)=>500+i*250).map(p=>`<option value="${p}"${p===2000?' selected':''}>${p.toLocaleString()} pts</option>`).join('')}
+          <option value="500">500 pts</option>
+          <option value="750">750 pts</option>
+          <option value="1000">1,000 pts</option>
+          <option value="1250">1,250 pts</option>
+          <option value="1500">1,500 pts</option>
+          <option value="1750">1,750 pts</option>
+          <option value="2000" selected>2,000 pts</option>
+          <option value="2250">2,250 pts</option>
+          <option value="2500">2,500 pts</option>
+          <option value="2750">2,750 pts</option>
+          <option value="3000">3,000 pts</option>
         </select>
       </div>
       <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.4rem;">
