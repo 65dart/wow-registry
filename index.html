@@ -2196,24 +2196,24 @@ function renderAdminRecords(){
   container.innerHTML = list.map(a => {
     const fc = FCSS[a.faction]||'';
     const player = a.player||a._owner||'Unknown';
-    return `<div class="ac" style="margin-bottom:.65rem;padding:.75rem 1rem;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;">
-        <div style="min-width:0">
-          <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">
+    return `<div class="ac" style="margin-bottom:.8rem;padding:1rem 1.1rem;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;">
+        <div style="min-width:0;flex:1">
+          <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-bottom:.35rem;">
             <span class="cft ${fc}" style="display:inline-flex;align-items:center;gap:.3rem;font-size:.58rem">${factionIconEl(a.faction,14)}${a.faction}</span>
-            <span style="font-family:'Cinzel',serif;font-size:.82rem;color:var(--parchment)">${clean(a.name)}</span>
+            <span style="font-family:'Cinzel',serif;font-size:.85rem;color:var(--parchment)">${clean(a.name)}</span>
           </div>
-          <div style="font-size:.8rem;color:var(--text-muted);margin-top:.2rem;">
-            by <strong style="color:var(--aged)">${clean(player)}</strong>
-            · ${badge(a.result)}
-            · ${a.points.toLocaleString()} pts
-            · ${fmtD(a.date)}
-            ${a.event?`· <em>${clean(a.event)}</em>`:''}
+          <div style="font-size:.8rem;color:var(--text-muted);display:flex;flex-wrap:wrap;align-items:center;gap:.35rem;">
+            <span>by <strong style="color:var(--aged)">${clean(player)}</strong></span>
+            <span style="opacity:.4">·</span>${badge(a.result)}
+            <span style="opacity:.4">·</span><span>${a.points.toLocaleString()} pts</span>
+            <span style="opacity:.4">·</span><span>${fmtD(a.date)}</span>
+            ${a.event?`<span style="opacity:.4">·</span><em>${clean(a.event)}</em>`:''}
           </div>
-          ${a.notes?`<div style="font-size:.8rem;color:var(--parchment-dark);font-style:italic;margin-top:.65rem;opacity:.8">${clean(a.notes)}</div>`:''}
+          ${a.notes?`<div style="font-size:.82rem;color:var(--parchment-dark);font-style:italic;margin-top:.75rem;padding-top:.65rem;border-top:1px solid rgba(201,168,76,.1);line-height:1.6;">${clean(a.notes)}</div>`:''}
         </div>
         <button class="dbtn admin-del-btn" data-del="${a.id}" title="Delete this record"
-          style="flex-shrink:0;font-size:.72rem;padding:.3rem .6rem;">✕ Delete</button>
+          style="flex-shrink:0;font-size:.72rem;padding:.35rem .7rem;margin-top:.1rem;">✕ Delete</button>
       </div>
     </div>`;
   }).join('');
