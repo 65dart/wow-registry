@@ -2644,8 +2644,8 @@ function renderEventDetail(data){
     </div>`;
   }
 
-  // Add participant panel — always visible to organiser and admin
-  if(isOrganiser || isPrivileged()){
+  // Add participant panel — only visible when event is open
+  if((isOrganiser || isPrivileged()) && event.status === 'open'){
     html += `<div class="panel" style="margin-bottom:1.2rem;border-color:rgba(201,168,76,.2);">
       <div class="ptitle">👤 Add Participant</div>
       <p style="font-size:.82rem;color:var(--text-muted);font-style:italic;margin-bottom:.9rem;">Add a registered user by username, or add a guest who doesn't have an account.</p>

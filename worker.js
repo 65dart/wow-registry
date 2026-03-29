@@ -101,52 +101,55 @@ async function createArmyRecords(env, evt, pairing, result) {
     const p1result = result === 'player1' ? 'Win' : result === 'player2' ? 'Loss' : 'Draw';
     const p2result = result === 'player2' ? 'Win' : result === 'player1' ? 'Loss' : 'Draw';
 
-      // Only create army records for registered users (guests have no user_id)
-      if (p1 && p1.user_id) {
-        const p1units = (() => { try { return JSON.parse(p1.units||'[]'); } catch(e){ return []; } })();
-        const army1 = {
-          player:    p1.username,
-          name:      p1.army_name || `${p1.username}'s Army`,
-          faction:   p1.faction   || '',
-          points:    evt.points_limit || 0,
-          oppPoints: evt.points_limit || 0,
-          result:    p1result,
-          opponent:  p2 ? p2.faction : '',
-          event:     evt.name,
-          notes:     `Round ${pairing.round} — ${evt.name}`,
-          units:     p1units,
-          oppUnits:  [],
-          date:      today,
-          likes:     0,
-        };
-        await env.DB.prepare(
-          'INSERT INTO armies (user_id, data) VALUES (?, ?)'
-        ).bind(p1.user_id, JSON.stringify(army1)).run();
-      }
+    // Helper to build opponent display string (faction if known, else name)
+    const oppDisplay = (p) => p ? (p.faction || p.username || '') : '';
 
-      if (p2 && p2.user_id) {
-        const p2units = (() => { try { return JSON.parse(p2.units||'[]'); } catch(e){ return []; } })();
-        const army2 = {
-          player:    p2.username,
-          name:      p2.army_name || `${p2.username}'s Army`,
-          faction:   p2.faction   || '',
-          points:    evt.points_limit || 0,
-          oppPoints: evt.points_limit || 0,
-          result:    p2result,
-          opponent:  p1 ? p1.faction : '',
-          event:     evt.name,
-          notes:     `Round ${pairing.round} — ${evt.name}`,
-          units:     p2units,
-          oppUnits:  [],
-          date:      today,
-          likes:     0,
-        };
-        await env.DB.prepare(
-          'INSERT INTO armies (user_id, data) VALUES (?, ?)'
-        ).bind(p2.user_id, JSON.stringify(army2)).run();
-      }
+    // Create army record for p1 if they are a registered user
+    if (p1 && p1.user_id) {
+      const p1units = (() => { try { return JSON.parse(p1.units||'[]'); } catch(e){ return []; } })();
+      const army1 = {
+        player:    p1.username,
+        name:      p1.army_name || `${p1.username}'s Army`,
+        faction:   p1.faction   || '',
+        points:    evt.points_limit || 0,
+        oppPoints: evt.points_limit || 0,
+        result:    p1result,
+        opponent:  oppDisplay(p2),
+        event:     evt.name,
+        notes:     `Round ${pairing.round} — ${evt.name}${p2 ? ` vs ${p2.username}` : ''}`,
+        units:     p1units,
+        oppUnits:  [],
+        date:      today,
+        likes:     0,
+      };
+      await env.DB.prepare(
+        'INSERT INTO armies (user_id, data) VALUES (?, ?)'
+      ).bind(p1.user_id, JSON.stringify(army1)).run();
+    }
+
+    // Create army record for p2 if they are a registered user
+    if (p2 && p2.user_id) {
+      const p2units = (() => { try { return JSON.parse(p2.units||'[]'); } catch(e){ return []; } })();
+      const army2 = {
+        player:    p2.username,
+        name:      p2.army_name || `${p2.username}'s Army`,
+        faction:   p2.faction   || '',
+        points:    evt.points_limit || 0,
+        oppPoints: evt.points_limit || 0,
+        result:    p2result,
+        opponent:  oppDisplay(p1),
+        event:     evt.name,
+        notes:     `Round ${pairing.round} — ${evt.name}${p1 ? ` vs ${p1.username}` : ''}`,
+        units:     p2units,
+        oppUnits:  [],
+        date:      today,
+        likes:     0,
+      };
+      await env.DB.prepare(
+        'INSERT INTO armies (user_id, data) VALUES (?, ?)'
+      ).bind(p2.user_id, JSON.stringify(army2)).run();
+    }
   } catch(e) {
-    // Non-fatal — don't let army record creation failure break the result approval
     console.error('createArmyRecords error:', e);
   }
 }
