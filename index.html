@@ -370,6 +370,7 @@ select option{background:#1a1208;}
   <button class="nt" data-page="leaderboard">⚜ Leaderboard</button>
   <button class="nt" data-page="charts">✦ Statistics</button>
   <button class="nt" data-page="rosters">⚔ Rosters</button>
+  <button class="nt" data-page="admin" id="nav-admin" style="display:none">⚙ Admin</button>
   <div class="user-pill" id="user-pill" style="display:none">
     <span id="user-name"></span>
     <button onclick="doLogout()">Logout</button>
@@ -607,27 +608,37 @@ select option{background:#1a1208;}
       </div>
     </div>
     <div>
-      <div class="panel" style="margin-bottom:1rem">
+      <div class="panel">
         <div class="ptitle">✦ About the Registry</div>
         <div style="font-size:.88rem;line-height:1.75;color:var(--parchment-dark);font-style:italic;">
-          <p style="margin-bottom:.75rem">Your records are saved to your browser's local storage and persist between sessions automatically.</p>
+          <p style="margin-bottom:.75rem">Your records are saved to the server and persist between sessions automatically.</p>
           <p style="margin-bottom:.75rem">Include battle notes to remember key moments — a well-chronicled battle is worth more than a forgotten victory.</p>
           <p>The Statistics page shows win rates by faction and points distribution. The Leaderboard tracks the most decorated commanders.</p>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="ptitle">⚠ Data Management</div>
-        <p style="font-size:.84rem;color:var(--text-muted);font-style:italic;margin-bottom:1rem;">Export all records as JSON backup, or reset to default records.</p>
-        <div style="display:flex;gap:.6rem;">
-          <button class="subbtn" id="exp-btn" style="flex:1;font-size:.72rem;padding:.55rem;">Export JSON</button>
-          <button class="subbtn" id="rst-btn" style="flex:1;font-size:.72rem;padding:.55rem;border-color:rgba(180,60,60,.5);color:#d46060;">Reset All</button>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- LEADERBOARD -->
+<!-- ADMIN -->
+<div class="page" id="page-admin">
+  <div style="max-width:600px;margin:0 auto;">
+    <div class="panel" style="margin-bottom:1.5rem">
+      <div class="ptitle">⚙ Data Management</div>
+      <p style="font-size:.88rem;color:var(--text-muted);font-style:italic;margin-bottom:1.2rem;">Export a full JSON backup of all community army records, or delete your own records.</p>
+      <div style="display:flex;gap:.6rem;">
+        <button class="subbtn" id="exp-btn" style="flex:1;font-size:.78rem;padding:.6rem;">↓ Export All Records (JSON)</button>
+      </div>
+    </div>
+    <div class="panel" style="border-color:rgba(180,60,60,.3)">
+      <div class="ptitle" style="color:#d46060;">⚠ Danger Zone</div>
+      <p style="font-size:.88rem;color:var(--text-muted);font-style:italic;margin-bottom:1.2rem;">Permanently delete all of your own army records from the database. This cannot be undone.</p>
+      <div style="display:flex;gap:.6rem;">
+        <button class="subbtn" id="rst-btn" style="flex:1;font-size:.78rem;padding:.6rem;border-color:rgba(180,60,60,.5);color:#d46060;">✕ Delete My Records</button>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="page" id="page-leaderboard">
   <div class="lblayout" id="lb"></div>
 </div>
@@ -1034,6 +1045,13 @@ function onAuthSuccess(data) {
   document.getElementById('auth-overlay').classList.add('hidden');
   document.getElementById('user-pill').style.display = 'flex';
   document.getElementById('user-name').textContent   = authUser;
+  // Show admin tab for privileged accounts
+  const PRIVILEGED = ['admin','administrator','mod','moderator'];
+  if (PRIVILEGED.includes((authUser||'').toLowerCase())) {
+    document.getElementById('nav-admin').style.display = 'inline-block';
+  } else {
+    document.getElementById('nav-admin').style.display = 'none';
+  }
   // Pre-fill commander name with logged-in username and lock it
   const plField = document.getElementById('s-pl');
   if (plField) {
@@ -1056,9 +1074,10 @@ async function doLogout() {
   localStorage.removeItem('wow_token');
   localStorage.removeItem('wow_user');
   localStorage.removeItem('wow_userid');
-  armies = []; liked.clear();
+  armies = []; myArmies = []; liked.clear();
   renderCards();
   document.getElementById('user-pill').style.display = 'none';
+  document.getElementById('nav-admin').style.display = 'none';
   document.getElementById('auth-overlay').classList.remove('hidden');
 }
 
@@ -1110,6 +1129,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('auth-overlay').classList.add('hidden');
     document.getElementById('user-pill').style.display = 'flex';
     document.getElementById('user-name').textContent   = authUser;
+    const PRIVILEGED = ['admin','administrator','mod','moderator'];
+    if (PRIVILEGED.includes((authUser||'').toLowerCase())) {
+      document.getElementById('nav-admin').style.display = 'inline-block';
+    }
     const plField = document.getElementById('s-pl');
     if (plField) {
       plField.value    = authUser;

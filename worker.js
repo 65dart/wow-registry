@@ -125,6 +125,11 @@ export default {
         return err('Username, email and password are required.', 400, origin, env);
       if (username.length < 3 || username.length > 30)
         return err('Username must be 3–30 characters.', 400, origin, env);
+
+      // Reserved usernames — cannot be registered by new users
+      const RESERVED = ['admin','administrator','mod','moderator'];
+      if (RESERVED.includes(username.toLowerCase()))
+        return err('That username is reserved and cannot be registered.', 400, origin, env);
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
         return err('Invalid email address.', 400, origin, env);
       if (password.length < 8)
