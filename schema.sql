@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS events (
 CREATE TABLE IF NOT EXISTS event_participants (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   event_id   INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
-  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id    INTEGER,                               -- NULL for guests
   username   TEXT    NOT NULL,
   faction    TEXT    DEFAULT '',
   army_name  TEXT    DEFAULT '',
@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS event_participants (
   draws      INTEGER NOT NULL DEFAULT 0,
   points     INTEGER NOT NULL DEFAULT 0,  -- tournament points (3W/1D/0L)
   joined_at  TEXT    NOT NULL DEFAULT (datetime('now')),
-  UNIQUE(event_id, user_id)
+  UNIQUE(event_id, user_id)  -- NULL user_ids (guests) are always unique in SQLite
 );
 
 -- Event pairings (one row per game per round)

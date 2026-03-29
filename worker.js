@@ -497,18 +497,16 @@ export default {
       }
 
       if (is_guest) {
-        // Guest — no user account required
+        // Guest — no user account required, user_id is NULL
         if (!guest_name) return err('Guest name is required.', 400, origin, env);
         const displayName = `${guest_name} (Guest)`;
-        // Use a negative unique ID based on timestamp to avoid conflict with real user IDs
-        const guestUserId = -(Date.now() % 2147483647);
         try {
           await env.DB.prepare(
             `INSERT INTO event_participants (event_id, user_id, username, faction, army_name, units)
-             VALUES (?, ?, ?, ?, ?, ?)`
-          ).bind(eid, guestUserId, displayName, faction||'', army_name||'', '[]').run();
+             VALUES (?, NULL, ?, ?, ?, ?)`
+          ).bind(eid, displayName, faction||'', army_name||'', '[]').run();
         } catch(e) {
-          return err(`Could not add guest — please try again.`, 409, origin, env);
+          return err(`Could not add guest. A guest with that name may already exist.`, 409, origin, env);
         }
         return json({ ok: true }, 201, origin, env);
       } else {
