@@ -2565,12 +2565,13 @@ async function openEvent(id){
 // ── Render event detail ──
 function renderEventDetail(data){
   const { event, participants, pairings } = data;
-  const isOrganiser = event.organiser_id === authUserId || event.organiser_name === authUser;
+  const isOrganiser = +event.organiser_id === +authUserId || event.organiser_name === authUser;
   const isParticipant = participants.some(p => p.user_id === authUserId || p.username === authUser);
   const myEntry = participants.find(p => p.username === authUser);
   const canStartRound = (isOrganiser || isPrivileged()) && event.status !== 'complete' &&
     (event.current_round === 0 || allRoundApproved(pairings, event.current_round)) &&
-    event.current_round < event.total_rounds;
+    event.current_round < event.total_rounds &&
+    participants.length >= 2;
 
   // Group pairings by round
   const byRound = {};
@@ -2991,13 +2992,21 @@ function wireEventDetailButtons(event, participants){
   document.getElementById('ev-gen-round-btn')?.addEventListener('click', async () => {
     const label = event.current_round === 0 ? 'Start Round 1' : `Start Round ${event.current_round+1}`;
     if(!confirm(`${label}? This will generate pairings automatically.`)) return;
-    const res = await fetch(`${API}/api/events/${event.id}/round`, {
-      method:'POST', headers:apiHeaders(), body:JSON.stringify({})
-    });
-    const d = await res.json();
-    if(!res.ok){ showToast(d.error||'Could not generate round.',true); return; }
-    showToast(`✦ Round ${d.round} pairings generated!`);
-    openEvent(event.id);
+    const btn = document.getElementById('ev-gen-round-btn');
+    btn.disabled = true; btn.textContent = '⏳ Generating…';
+    try {
+      const res = await fetch(`${API}/api/events/${event.id}/round`, {
+        method:'POST', headers:apiHeaders(), body:JSON.stringify({})
+      });
+      const d = await res.json();
+      if(!res.ok){ showToast(d.error||'Could not generate round.', true); return; }
+      showToast(`✦ Round ${d.round} pairings generated!`);
+      openEvent(event.id);
+    } catch(e) {
+      showToast('⚠ Could not reach the server.', true);
+    } finally {
+      btn.disabled = false; btn.textContent = `⚔ ${label}`;
+    }
   });
 
   // Manual pairings toggle
