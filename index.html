@@ -638,8 +638,8 @@ select option{background:#1a1208;}
 
     <!-- Filter tabs -->
     <div style="display:flex;gap:.4rem;margin-bottom:1rem;">
-      <button class="evt-filter-btn on" data-filter="all"    style="font-family:'Cinzel',serif;font-size:.65rem;padding:.3rem .75rem;border:1px solid rgba(201,168,76,.25);background:none;color:var(--text-muted);cursor:pointer;border-radius:2px;letter-spacing:.06em;">All</button>
-      <button class="evt-filter-btn"    data-filter="open"   style="font-family:'Cinzel',serif;font-size:.65rem;padding:.3rem .75rem;border:1px solid rgba(201,168,76,.25);background:none;color:var(--text-muted);cursor:pointer;border-radius:2px;letter-spacing:.06em;">Open</button>
+      <button class="evt-filter-btn"    data-filter="all"    style="font-family:'Cinzel',serif;font-size:.65rem;padding:.3rem .75rem;border:1px solid rgba(201,168,76,.25);background:none;color:var(--text-muted);cursor:pointer;border-radius:2px;letter-spacing:.06em;">All</button>
+      <button class="evt-filter-btn on" data-filter="open"   style="font-family:'Cinzel',serif;font-size:.65rem;padding:.3rem .75rem;border:1px solid rgba(201,168,76,.25);background:none;color:var(--text-muted);cursor:pointer;border-radius:2px;letter-spacing:.06em;">Open</button>
       <button class="evt-filter-btn"    data-filter="active" style="font-family:'Cinzel',serif;font-size:.65rem;padding:.3rem .75rem;border:1px solid rgba(201,168,76,.25);background:none;color:var(--text-muted);cursor:pointer;border-radius:2px;letter-spacing:.06em;">Active</button>
       <button class="evt-filter-btn"    data-filter="complete" style="font-family:'Cinzel',serif;font-size:.65rem;padding:.3rem .75rem;border:1px solid rgba(201,168,76,.25);background:none;color:var(--text-muted);cursor:pointer;border-radius:2px;letter-spacing:.06em;">Complete</button>
     </div>
@@ -2496,7 +2496,7 @@ function renderAdminRecords(){
 
 let eventsData       = [];   // all events list
 let currentEvent     = null; // currently viewed event detail
-let evtFilterStatus  = 'all';
+let evtFilterStatus  = 'open';
 
 // Status badge
 function evtStatusBadge(status){

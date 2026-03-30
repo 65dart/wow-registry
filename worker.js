@@ -449,7 +449,7 @@ export default {
       if (!event) return err('Event not found.', 404, origin, env);
 
       const participants = await env.DB.prepare(
-        `SELECT * FROM event_participants WHERE event_id = ? ORDER BY points DESC, wins DESC`
+        `SELECT * FROM event_participants WHERE event_id = ? ORDER BY points DESC, wins DESC, battle_points DESC`
       ).bind(eid).all();
 
       const pairings = await env.DB.prepare(
@@ -597,7 +597,7 @@ export default {
 
       // Get participants sorted by points desc
       const participants = await env.DB.prepare(
-        `SELECT * FROM event_participants WHERE event_id = ? ORDER BY points DESC, wins DESC`
+        `SELECT * FROM event_participants WHERE event_id = ? ORDER BY points DESC, wins DESC, battle_points DESC`
       ).bind(eid).all();
       const parts = participants.results || [];
       if (parts.length < 2) return err('Need at least 2 participants.', 400, origin, env);
