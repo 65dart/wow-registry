@@ -2633,6 +2633,7 @@ function renderEventDetail(data){
           <th style="padding:.4rem .3rem;text-align:center;">L</th>
           <th style="padding:.4rem .3rem;text-align:center;">Battle Pts</th>
           <th style="padding:.4rem .3rem;text-align:center;">Tourney Pts</th>
+          ${isOrganiser||isPrivileged()?`<th style="padding:.4rem .3rem;"></th>`:''}
         </tr></thead>
         <tbody>
           ${participants.map((p,i) => `<tr style="border-bottom:1px solid rgba(201,168,76,.07);">
@@ -2644,6 +2645,7 @@ function renderEventDetail(data){
             <td style="padding:.45rem .3rem;text-align:center;color:#d46060;">${p.losses}</td>
             <td style="padding:.45rem .3rem;text-align:center;color:var(--parchment);">${p.battle_points!=null?p.battle_points:'—'}</td>
             <td style="padding:.45rem .3rem;text-align:center;font-family:'Cinzel',serif;color:var(--aged);font-weight:700;">${p.points}</td>
+            ${isOrganiser||isPrivileged()?`<td style="padding:.45rem .3rem;text-align:center;"><button class="dbtn ev-remove-participant" data-pid="${p.id}" data-name="${p.username}" style="font-size:.6rem;padding:.18rem .45rem;" title="Remove from event">✕</button></td>`:''}
           </tr>`).join('')}
         </tbody>
       </table>
@@ -2967,6 +2969,28 @@ function wireEventDetailButtons(event, participants){
     if(!res.ok){ showToast('⚠ Could not reopen registration.',true); return; }
     showToast('✦ Registration reopened. Players can now join again.');
     openEvent(event.id);
+  });
+
+  // Remove participant
+  document.querySelectorAll('.ev-remove-participant').forEach(btn => {
+    btn.addEventListener('click', async function(){
+      const pid  = +this.dataset.pid;
+      const name = this.dataset.name;
+      if(!confirm(`Remove "${name}" from this event?`)) return;
+      this.disabled = true; this.textContent = '…';
+      try {
+        const res = await fetch(`${API}/api/events/${event.id}/remove-participant/${pid}`, {
+          method: 'DELETE',
+          headers: apiHeaders()
+        });
+        if(!res.ok){ const d=await res.json(); showToast(d.error||'Could not remove participant.', true); this.disabled=false; this.textContent='✕'; return; }
+        showToast(`✦ ${name} removed from the event.`);
+        openEvent(event.id);
+      } catch(e){
+        showToast('⚠ Could not remove participant.', true);
+        this.disabled = false; this.textContent = '✕';
+      }
+    });
   });
 
   // Add participant type toggle

@@ -474,6 +474,25 @@ export default {
       return json({ ok: true }, 200, origin, env);
     }
 
+    // ── DELETE /api/events/:id/remove-participant/:pid — remove a participant ──
+    const removeParticipantMatch = path.match(/^\/api\/events\/(\d+)\/remove-participant\/(\d+)$/);
+    if (removeParticipantMatch && method === 'DELETE') {
+      const eid = parseInt(removeParticipantMatch[1]);
+      const pid = parseInt(removeParticipantMatch[2]);
+      const evt = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(eid).first();
+      if (!evt) return err('Event not found.', 404, origin, env);
+      const PRIVILEGED = ['admin','administrator','mod','moderator'];
+      const isPrivileged = PRIVILEGED.includes((user.username||'').toLowerCase());
+      if (evt.organiser_id !== user.user_id && !isPrivileged)
+        return err('Only the organiser or an admin can remove participants.', 403, origin, env);
+      const participant = await env.DB.prepare(
+        'SELECT * FROM event_participants WHERE id = ? AND event_id = ?'
+      ).bind(pid, eid).first();
+      if (!participant) return err('Participant not found.', 404, origin, env);
+      await env.DB.prepare('DELETE FROM event_participants WHERE id = ?').bind(pid).run();
+      return json({ ok: true }, 200, origin, env);
+    }
+
     // ── POST /api/events/:id/add-participant — organiser/admin manually adds a user or guest ──
     const addParticipantMatch = path.match(/^\/api\/events\/(\d+)\/add-participant$/);
     if (addParticipantMatch && method === 'POST') {
