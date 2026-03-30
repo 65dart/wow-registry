@@ -386,6 +386,32 @@ export default {
       return json({ username: user.username, email: user.email, userId: user.user_id }, 200, origin, env);
     }
 
+    // ── POST /api/change-password ──
+    if (path === '/api/change-password' && method === 'POST') {
+      const { current_password, new_password } = await request.json().catch(() => ({}));
+      if (!current_password || !new_password)
+        return err('Current and new password are required.', 400, origin, env);
+      if (new_password.length < 8)
+        return err('New password must be at least 8 characters.', 400, origin, env);
+
+      // Fetch the user's current hashed password
+      const userData = await env.DB.prepare(
+        'SELECT id, password FROM users WHERE id = ?'
+      ).bind(user.user_id).first();
+      if (!userData) return err('User not found.', 404, origin, env);
+
+      // Verify current password
+      if (!(await verifyPassword(current_password, userData.password)))
+        return err('Current password is incorrect.', 401, origin, env);
+
+      // Hash and save new password
+      const newHash = await hashPassword(new_password);
+      await env.DB.prepare('UPDATE users SET password = ? WHERE id = ?')
+        .bind(newHash, user.user_id).run();
+
+      return json({ ok: true }, 200, origin, env);
+    }
+
     // ── GET /api/admin/stats — admin statistics (privileged only) ──
     if (path === '/api/admin/stats' && method === 'GET') {
       const PRIVILEGED = ['admin','administrator','mod','moderator'];

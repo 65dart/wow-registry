@@ -377,6 +377,7 @@ select option{background:#1a1208;}
   <button class="nt" data-page="admin" id="nav-admin" style="display:none">⚙ Admin</button>
   <div class="user-pill" id="user-pill" style="display:none">
     <span id="user-name"></span>
+    <button onclick="showChangePassword()">⚙ Settings</button>
     <button onclick="doLogout()">Logout</button>
   </div>
 </nav>
@@ -851,6 +852,30 @@ select option{background:#1a1208;}
   <span style="margin:0 .75rem;opacity:.3">·</span>
   <span>⚔ <span id="visitor-count">—</span> Commanders Have Visited</span>
 </footer>
+
+<!-- PASSWORD CHANGE MODAL -->
+<div id="pw-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid rgba(201,168,76,.25);border-radius:4px;padding:2rem;width:100%;max-width:380px;margin:1rem;">
+    <div style="font-family:'Cinzel',serif;font-size:1rem;color:var(--gold-light);margin-bottom:1.2rem;letter-spacing:.08em;">⚙ Change Password</div>
+    <div class="ff" style="margin-bottom:.9rem;">
+      <label>Current Password</label>
+      <input type="password" id="pw-current" placeholder="Your current password" autocomplete="current-password">
+    </div>
+    <div class="ff" style="margin-bottom:.9rem;">
+      <label>New Password</label>
+      <input type="password" id="pw-new" placeholder="At least 8 characters" autocomplete="new-password">
+    </div>
+    <div class="ff" style="margin-bottom:1.2rem;">
+      <label>Confirm New Password</label>
+      <input type="password" id="pw-confirm" placeholder="Repeat new password" autocomplete="new-password">
+    </div>
+    <div id="pw-error" style="font-size:.82rem;color:#d46060;margin-bottom:.8rem;display:none;"></div>
+    <div style="display:flex;gap:.6rem;">
+      <button class="subbtn" id="pw-save-btn" style="flex:1;">Save Password</button>
+      <button class="subbtn" onclick="hideChangePassword()" style="flex:0 0 auto;font-size:.75rem;border-color:rgba(201,168,76,.2);color:var(--text-muted);">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const SK='wow_v8';
@@ -4108,6 +4133,67 @@ if (authToken) {
   }
   renderCards();
 }
+
+// ── PASSWORD CHANGE ──
+function showChangePassword(){
+  document.getElementById('pw-current').value = '';
+  document.getElementById('pw-new').value     = '';
+  document.getElementById('pw-confirm').value = '';
+  document.getElementById('pw-error').style.display = 'none';
+  const modal = document.getElementById('pw-modal');
+  modal.style.display = 'flex';
+}
+
+function hideChangePassword(){
+  document.getElementById('pw-modal').style.display = 'none';
+}
+
+// Close modal on backdrop click
+document.getElementById('pw-modal').addEventListener('click', function(e){
+  if(e.target === this) hideChangePassword();
+});
+
+document.getElementById('pw-save-btn').addEventListener('click', async function(){
+  const current = document.getElementById('pw-current').value;
+  const newPw   = document.getElementById('pw-new').value;
+  const confirm = document.getElementById('pw-confirm').value;
+  const errEl   = document.getElementById('pw-error');
+
+  errEl.style.display = 'none';
+
+  if(!current || !newPw || !confirm){
+    errEl.textContent = 'All fields are required.'; errEl.style.display='block'; return;
+  }
+  if(newPw.length < 8){
+    errEl.textContent = 'New password must be at least 8 characters.'; errEl.style.display='block'; return;
+  }
+  if(newPw !== confirm){
+    errEl.textContent = 'New passwords do not match.'; errEl.style.display='block'; return;
+  }
+
+  this.disabled = true; this.textContent = '⏳ Saving…';
+
+  try {
+    const res = await fetch(`${API}/api/change-password`, {
+      method: 'POST',
+      headers: apiHeaders(),
+      body: JSON.stringify({ current_password: current, new_password: newPw })
+    });
+    const d = await res.json();
+    if(!res.ok){
+      errEl.textContent = d.error || 'Could not change password.';
+      errEl.style.display = 'block';
+    } else {
+      hideChangePassword();
+      showToast('✦ Password changed successfully.');
+    }
+  } catch(e){
+    errEl.textContent = 'Could not reach the server.';
+    errEl.style.display = 'block';
+  } finally {
+    this.disabled = false; this.textContent = 'Save Password';
+  }
+});
 
 // ── VISITOR COUNTER ──
 (async function(){
