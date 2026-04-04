@@ -2639,10 +2639,61 @@ function renderEventDetail(data){
         ${event.status==='open' && isParticipant && !isOrganiser ? `<button class="subbtn" id="ev-leave-btn" style="font-size:.75rem;padding:.4rem .9rem;border-color:rgba(180,60,60,.4);color:#d46060;">Leave</button>` : ''}
         ${isOrganiser && event.status==='open' ? `<button class="subbtn" id="ev-close-reg-btn" style="font-size:.75rem;padding:.4rem .9rem;">Close Registration</button>` : ''}
         ${(isOrganiser || isPrivileged()) && (event.status==='active' || event.status==='complete') ? `<button class="subbtn" id="ev-reopen-reg-btn" style="font-size:.75rem;padding:.4rem .9rem;border-color:rgba(106,175,106,.4);color:#6aaf6a;">↺ Reopen Registration</button>` : ''}
+        ${(isOrganiser || isPrivileged()) ? `<button class="subbtn" id="ev-edit-btn" style="font-size:.75rem;padding:.4rem .9rem;border-color:rgba(201,168,76,.3);color:var(--text-muted);">✎ Edit Event</button>` : ''}
         <button class="subbtn" id="ev-share-btn" data-evid="${event.id}" style="font-size:.75rem;padding:.4rem .9rem;border-color:rgba(201,168,76,.3);color:var(--text-muted);">🔗 Share Link</button>
         ${(isOrganiser || isPrivileged()) ? `<button class="subbtn" id="ev-delete-btn" style="font-size:.75rem;padding:.4rem .9rem;border-color:rgba(180,60,60,.4);color:#d46060;">Delete Event</button>` : ''}
       </div>
-    </div>`;
+    </div>
+
+    <!-- Edit event form (hidden by default) -->
+    ${isOrganiser || isPrivileged() ? `<div id="ev-edit-form" style="display:none;" class="panel" style="margin-bottom:1.2rem;">
+      <div class="ptitle">✎ Edit Event</div>
+      <div class="ff" style="margin-bottom:.9rem;">
+        <label>Event Name *</label>
+        <input type="text" id="ev-edit-name" value="${clean(event.name)}">
+      </div>
+      <div class="ff" style="margin-bottom:.9rem;">
+        <label>Description</label>
+        <textarea id="ev-edit-desc" rows="2" style="width:100%;background:rgba(0,0,0,.25);border:1px solid rgba(201,168,76,.2);color:var(--parchment);padding:.55rem .7rem;font-size:.88rem;border-radius:2px;resize:vertical;">${event.description||''}</textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.9rem;">
+        <div class="ff">
+          <label>Pairing System</label>
+          <select id="ev-edit-system">
+            <option value="swiss"${event.pairing_system==='swiss'?' selected':''}>Swiss</option>
+            <option value="round_robin"${event.pairing_system==='round_robin'?' selected':''}>Round Robin</option>
+            <option value="elimination"${event.pairing_system==='elimination'?' selected':''}>Single Elimination</option>
+            <option value="manual"${event.pairing_system==='manual'?' selected':''}>Manual</option>
+          </select>
+        </div>
+        <div class="ff">
+          <label>Number of Rounds</label>
+          <select id="ev-edit-rounds">
+            ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<option value="${n}"${event.total_rounds===n?' selected':''}>${n}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.9rem;">
+        <div class="ff">
+          <label>Army Points Limit</label>
+          <select id="ev-edit-points">
+            <option value="0"${!event.points_limit?' selected':''}>No limit</option>
+            ${[500,750,1000,1250,1500,1750,2000,2250,2500,2750,3000].map(p=>`<option value="${p}"${event.points_limit===p?' selected':''}>${p.toLocaleString()} pts</option>`).join('')}
+          </select>
+        </div>
+        <div class="ff">
+          <label>Max Participants</label>
+          <select id="ev-edit-max">
+            <option value="0"${!event.max_participants?' selected':''}>No limit</option>
+            ${[4,6,8,10,12,16,20,24,32].map(n=>`<option value="${n}"${event.max_participants===n?' selected':''}>${n} players</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.5rem;">
+        <button class="subbtn" id="ev-edit-save-btn" style="width:100%;">✓ Save Changes</button>
+        <button class="subbtn" id="ev-edit-cancel-btn" style="width:100%;font-size:.75rem;border-color:rgba(201,168,76,.2);color:var(--text-muted);">Cancel</button>
+      </div>
+    </div>` : ''}`;
 
   // Standings table
   if(participants.length){
@@ -2991,6 +3042,47 @@ function wireEventDetailButtons(event, participants){
     await fetch(`${API}/api/events/${event.id}/leave`, { method:'POST', headers:apiHeaders() });
     showToast('You have left the event.');
     openEvent(event.id);
+  });
+
+  // Edit event
+  document.getElementById('ev-edit-btn')?.addEventListener('click', () => {
+    const form = document.getElementById('ev-edit-form');
+    if(form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  });
+
+  document.getElementById('ev-edit-cancel-btn')?.addEventListener('click', () => {
+    const form = document.getElementById('ev-edit-form');
+    if(form) form.style.display = 'none';
+  });
+
+  document.getElementById('ev-edit-save-btn')?.addEventListener('click', async () => {
+    const name   = document.getElementById('ev-edit-name')?.value.trim();
+    const desc   = document.getElementById('ev-edit-desc')?.value.trim()||'';
+    const system = document.getElementById('ev-edit-system')?.value;
+    const rounds = +document.getElementById('ev-edit-rounds')?.value;
+    const points = +document.getElementById('ev-edit-points')?.value;
+    const max    = +document.getElementById('ev-edit-max')?.value;
+
+    if(!name){ showToast('⚠ Event name is required.',true); return; }
+
+    const btn = document.getElementById('ev-edit-save-btn');
+    btn.disabled = true; btn.textContent = '⏳ Saving…';
+
+    try {
+      const res = await fetch(`${API}/api/events/${event.id}/edit`, {
+        method: 'PUT',
+        headers: apiHeaders(),
+        body: JSON.stringify({ name, description: desc, pairing_system: system, total_rounds: rounds, points_limit: points, max_participants: max })
+      });
+      const d = await res.json();
+      if(!res.ok){ showToast(d.error||'Could not save changes.',true); return; }
+      showToast('✦ Event updated.');
+      openEvent(event.id);
+    } catch(e){
+      showToast('⚠ Could not reach the server.',true);
+    } finally {
+      btn.disabled = false; btn.textContent = '✓ Save Changes';
+    }
   });
 
   // Share link

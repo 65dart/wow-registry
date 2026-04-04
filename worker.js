@@ -485,6 +485,31 @@ export default {
       return json({ event, participants: participants.results||[], pairings: pairings.results||[] }, 200, origin, env);
     }
 
+    // ── PUT /api/events/:id/edit — edit event details (organiser or admin) ──
+    const evtEditMatch = path.match(/^\/api\/events\/(\d+)\/edit$/);
+    if (evtEditMatch && method === 'PUT') {
+      const eid = parseInt(evtEditMatch[1]);
+      const evt = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(eid).first();
+      if (!evt) return err('Event not found.', 404, origin, env);
+      const PRIVILEGED = ['admin','administrator','mod','moderator'];
+      const isPrivileged = PRIVILEGED.includes((user.username||'').toLowerCase());
+      if (evt.organiser_id !== user.user_id && !isPrivileged)
+        return err('Only the organiser or an admin can edit this event.', 403, origin, env);
+
+      const { name, description, pairing_system, total_rounds, points_limit, max_participants } = await request.json().catch(() => ({}));
+      if (!name) return err('Event name is required.', 400, origin, env);
+
+      const rounds = Math.max(1, Math.min(10, parseInt(total_rounds)||evt.total_rounds));
+      const pts    = Math.max(0, parseInt(points_limit)||0);
+      const maxP   = Math.max(0, parseInt(max_participants)||0);
+
+      await env.DB.prepare(
+        `UPDATE events SET name=?, description=?, pairing_system=?, total_rounds=?, points_limit=?, max_participants=? WHERE id=?`
+      ).bind(name, description||'', pairing_system||evt.pairing_system, rounds, pts, maxP, eid).run();
+
+      return json({ ok: true }, 200, origin, env);
+    }
+
     // ── PUT /api/events/:id — update event (organiser or admin) ──
     const evtUpdateMatch = path.match(/^\/api\/events\/(\d+)\/update$/);
     if (evtUpdateMatch && method === 'PUT') {
