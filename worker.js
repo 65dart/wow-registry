@@ -532,7 +532,7 @@ export default {
       if (evt.organiser_id !== user.user_id && !isPrivileged)
         return err('Only the organiser or an admin can add participants.', 403, origin, env);
 
-      const { username, guest_name, army_name, faction, is_guest } = await request.json().catch(() => ({}));
+      const { username, guest_name, army_name, faction, is_guest, units } = await request.json().catch(() => ({}));
 
       // Check participant limit
       if (evt.max_participants > 0) {
@@ -551,7 +551,7 @@ export default {
           await env.DB.prepare(
             `INSERT INTO event_participants (event_id, user_id, username, faction, army_name, units)
              VALUES (?, NULL, ?, ?, ?, ?)`
-          ).bind(eid, displayName, faction||'', army_name||'', '[]').run();
+          ).bind(eid, displayName, faction||'', army_name||'', JSON.stringify(units||[])).run();
         } catch(e) {
           return err(`Could not add guest. A guest with that name may already exist.`, 409, origin, env);
         }

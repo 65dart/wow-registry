@@ -2710,6 +2710,16 @@ function renderEventDetail(data){
       <!-- Guest fields -->
       <div id="ap-guest-fields" style="display:none;">
         <div class="ff" style="margin-bottom:.8rem;"><label>Guest Name *</label><input type="text" id="ev-add-guest-name" placeholder="e.g. John Smith"></div>
+        <div style="margin-bottom:.8rem;">
+          <label style="font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:.4rem;">Import Army JSON <span style="font-size:.58rem;opacity:.7">(optional)</span></label>
+          <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+            <label id="ap-guest-import-label" style="font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);border:1px solid rgba(201,168,76,.25);padding:.3rem .8rem;border-radius:3px;cursor:pointer;transition:all .2s;">
+              ↑ Import OWB JSON
+              <input type="file" id="ap-guest-import-input" accept=".json" style="display:none">
+            </label>
+            <span id="ap-guest-import-status" style="font-size:.78rem;color:var(--text-muted);font-style:italic;"></span>
+          </div>
+        </div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem;">
@@ -3020,6 +3030,41 @@ function wireEventDetailButtons(event, participants){
 
   // Add participant type toggle
   let apType = 'registered';
+  let apGuestImportedUnits = [];
+
+  // Guest JSON import handler
+  document.getElementById('ap-guest-import-input')?.addEventListener('change', function(){
+    if(!this.files[0]) return;
+    const file = this.files[0];
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const json = JSON.parse(e.target.result);
+        const units = parseImportJSON(json);
+        const meta  = extractMeta(json);
+        if(!units || !units.length){ showToast('⚠ No units found in that file.',true); return; }
+        apGuestImportedUnits = units;
+        // Auto-fill army name and faction if empty
+        const armyInput = document.getElementById('ev-add-army');
+        const facSel    = document.getElementById('ev-add-faction');
+        if(meta.name && armyInput && !armyInput.value) armyInput.value = meta.name;
+        if(meta.faction && facSel){
+          const match = [...facSel.options].find(o =>
+            o.value.toLowerCase() === meta.faction.toLowerCase() ||
+            o.text.toLowerCase()  === meta.faction.toLowerCase()
+          );
+          if(match) facSel.value = match.value;
+        }
+        const statusEl = document.getElementById('ap-guest-import-status');
+        if(statusEl) statusEl.textContent = `✦ ${units.length} units imported from ${file.name}`;
+        const lbl = document.getElementById('ap-guest-import-label');
+        if(lbl){ lbl.style.borderColor='var(--gold)'; lbl.style.color='var(--aged)'; }
+        showToast(`✦ Imported ${units.length} unit${units.length!==1?'s':''} from ${file.name}`);
+      } catch(err){ showToast('⚠ Could not read that file.',true); }
+    };
+    reader.readAsText(file);
+    this.value = '';
+  });
   document.querySelectorAll('.ap-type-btn').forEach(btn => {
     btn.addEventListener('click', function(){
       apType = this.dataset.type;
@@ -3056,7 +3101,7 @@ function wireEventDetailButtons(event, participants){
       const res = await fetch(`${API}/api/events/${event.id}/add-participant`, {
         method: 'POST',
         headers: apiHeaders(),
-        body: JSON.stringify({ username, guest_name: guestName, army_name, faction, is_guest: isGuest })
+        body: JSON.stringify({ username, guest_name: guestName, army_name, faction, is_guest: isGuest, units: isGuest ? apGuestImportedUnits : [] })
       });
       const d = await res.json();
       if(!res.ok){
@@ -3066,7 +3111,14 @@ function wireEventDetailButtons(event, participants){
         const displayName = isGuest ? guestName : username;
         if(statusEl){ statusEl.textContent = `✦ ${displayName} added successfully.`; statusEl.style.color='#6aaf6a'; }
         if(!isGuest) document.getElementById('ev-add-username').value = '';
-        if(isGuest)  document.getElementById('ev-add-guest-name').value = '';
+        if(isGuest){
+          document.getElementById('ev-add-guest-name').value = '';
+          apGuestImportedUnits = [];
+          const statusEl = document.getElementById('ap-guest-import-status');
+          if(statusEl) statusEl.textContent = '';
+          const lbl = document.getElementById('ap-guest-import-label');
+          if(lbl){ lbl.style.borderColor=''; lbl.style.color=''; }
+        }
         document.getElementById('ev-add-army').value = '';
         document.getElementById('ev-add-faction').value = '';
         showToast(`✦ ${displayName} added to the event!`);
