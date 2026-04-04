@@ -2705,6 +2705,16 @@ function renderEventDetail(data){
       <!-- Registered user fields -->
       <div id="ap-registered-fields">
         <div class="ff" style="margin-bottom:.8rem;"><label>Username *</label><input type="text" id="ev-add-username" placeholder="Exact username…"></div>
+        <div style="margin-bottom:.8rem;">
+          <label style="font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:.4rem;">Import Army JSON <span style="font-size:.58rem;opacity:.7">(optional)</span></label>
+          <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+            <label id="ap-reg-import-label" style="font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);border:1px solid rgba(201,168,76,.25);padding:.3rem .8rem;border-radius:3px;cursor:pointer;transition:all .2s;">
+              ↑ Import OWB JSON
+              <input type="file" id="ap-reg-import-input" accept=".json" style="display:none">
+            </label>
+            <span id="ap-reg-import-status" style="font-size:.78rem;color:var(--text-muted);font-style:italic;"></span>
+          </div>
+        </div>
       </div>
 
       <!-- Guest fields -->
@@ -3031,6 +3041,40 @@ function wireEventDetailButtons(event, participants){
   // Add participant type toggle
   let apType = 'registered';
   let apGuestImportedUnits = [];
+  let apRegImportedUnits   = [];
+
+  // Registered user JSON import handler
+  document.getElementById('ap-reg-import-input')?.addEventListener('change', function(){
+    if(!this.files[0]) return;
+    const file = this.files[0];
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const json  = JSON.parse(e.target.result);
+        const units = parseImportJSON(json);
+        const meta  = extractMeta(json);
+        if(!units || !units.length){ showToast('⚠ No units found in that file.',true); return; }
+        apRegImportedUnits = units;
+        const armyInput = document.getElementById('ev-add-army');
+        const facSel    = document.getElementById('ev-add-faction');
+        if(meta.name && armyInput && !armyInput.value) armyInput.value = meta.name;
+        if(meta.faction && facSel){
+          const match = [...facSel.options].find(o =>
+            o.value.toLowerCase() === meta.faction.toLowerCase() ||
+            o.text.toLowerCase()  === meta.faction.toLowerCase()
+          );
+          if(match) facSel.value = match.value;
+        }
+        const statusEl = document.getElementById('ap-reg-import-status');
+        if(statusEl) statusEl.textContent = `✦ ${units.length} units imported from ${file.name}`;
+        const lbl = document.getElementById('ap-reg-import-label');
+        if(lbl){ lbl.style.borderColor='var(--gold)'; lbl.style.color='var(--aged)'; }
+        showToast(`✦ Imported ${units.length} unit${units.length!==1?'s':''} from ${file.name}`);
+      } catch(err){ showToast('⚠ Could not read that file.',true); }
+    };
+    reader.readAsText(file);
+    this.value = '';
+  });
 
   // Guest JSON import handler
   document.getElementById('ap-guest-import-input')?.addEventListener('change', function(){
@@ -3101,7 +3145,7 @@ function wireEventDetailButtons(event, participants){
       const res = await fetch(`${API}/api/events/${event.id}/add-participant`, {
         method: 'POST',
         headers: apiHeaders(),
-        body: JSON.stringify({ username, guest_name: guestName, army_name, faction, is_guest: isGuest, units: isGuest ? apGuestImportedUnits : [] })
+        body: JSON.stringify({ username, guest_name: guestName, army_name, faction, is_guest: isGuest, units: isGuest ? apGuestImportedUnits : apRegImportedUnits })
       });
       const d = await res.json();
       if(!res.ok){
@@ -3110,7 +3154,14 @@ function wireEventDetailButtons(event, participants){
       } else {
         const displayName = isGuest ? guestName : username;
         if(statusEl){ statusEl.textContent = `✦ ${displayName} added successfully.`; statusEl.style.color='#6aaf6a'; }
-        if(!isGuest) document.getElementById('ev-add-username').value = '';
+        if(!isGuest){
+          document.getElementById('ev-add-username').value = '';
+          apRegImportedUnits = [];
+          const statusEl = document.getElementById('ap-reg-import-status');
+          if(statusEl) statusEl.textContent = '';
+          const lbl = document.getElementById('ap-reg-import-label');
+          if(lbl){ lbl.style.borderColor=''; lbl.style.color=''; }
+        }
         if(isGuest){
           document.getElementById('ev-add-guest-name').value = '';
           apGuestImportedUnits = [];

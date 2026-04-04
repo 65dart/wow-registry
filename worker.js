@@ -568,7 +568,7 @@ export default {
           await env.DB.prepare(
             `INSERT INTO event_participants (event_id, user_id, username, faction, army_name, units)
              VALUES (?, ?, ?, ?, ?, ?)`
-          ).bind(eid, targetUser.id, targetUser.username, faction||'', army_name||'', '[]').run();
+          ).bind(eid, targetUser.id, targetUser.username, faction||'', army_name||'', JSON.stringify(units||[])).run();
         } catch(e) {
           return err(`${targetUser.username} is already in this event.`, 409, origin, env);
         }
