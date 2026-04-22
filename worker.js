@@ -386,6 +386,32 @@ export default {
       return json({ username: user.username, email: user.email, userId: user.user_id }, 200, origin, env);
     }
 
+    // ── POST /api/delete-account ──
+    if (path === '/api/delete-account' && method === 'POST') {
+      const { password } = await request.json().catch(() => ({}));
+      if (!password) return err('Password is required.', 400, origin, env);
+
+      // Block admin accounts from self-deleting
+      const PRIVILEGED = ['admin','administrator','mod','moderator'];
+      if (PRIVILEGED.includes((user.username||'').toLowerCase()))
+        return err('Admin accounts cannot be deleted through this interface.', 403, origin, env);
+
+      // Verify password
+      const userData = await env.DB.prepare(
+        'SELECT id, password FROM users WHERE id = ?'
+      ).bind(user.user_id).first();
+      if (!userData) return err('User not found.', 404, origin, env);
+      if (!(await verifyPassword(password, userData.password)))
+        return err('Incorrect password.', 401, origin, env);
+
+      // Delete the user — cascades to sessions and armies via FK
+      await env.DB.prepare('DELETE FROM armies WHERE user_id = ?').bind(user.user_id).run();
+      await env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(user.user_id).run();
+      await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(user.user_id).run();
+
+      return json({ ok: true }, 200, origin, env);
+    }
+
     // ── POST /api/change-password ──
     if (path === '/api/change-password' && method === 'POST') {
       const { current_password, new_password } = await request.json().catch(() => ({}));

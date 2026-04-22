@@ -855,8 +855,11 @@ select option{background:#1a1208;}
 
 <!-- PASSWORD CHANGE MODAL -->
 <div id="pw-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:center;justify-content:center;">
-  <div style="background:var(--surface);border:1px solid rgba(201,168,76,.25);border-radius:4px;padding:2rem;width:100%;max-width:380px;margin:1rem;">
-    <div style="font-family:'Cinzel',serif;font-size:1rem;color:var(--gold-light);margin-bottom:1.2rem;letter-spacing:.08em;">⚙ Change Password</div>
+  <div style="background:var(--surface);border:1px solid rgba(201,168,76,.25);border-radius:4px;padding:2rem;width:100%;max-width:380px;margin:1rem;max-height:90vh;overflow-y:auto;">
+    <div style="font-family:'Cinzel',serif;font-size:1rem;color:var(--gold-light);margin-bottom:1.2rem;letter-spacing:.08em;">⚙ Settings</div>
+
+    <!-- Change Password -->
+    <div style="font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.7rem;">Change Password</div>
     <div class="ff" style="margin-bottom:.9rem;">
       <label>Current Password</label>
       <input type="password" id="pw-current" placeholder="Your current password" autocomplete="current-password">
@@ -865,15 +868,28 @@ select option{background:#1a1208;}
       <label>New Password</label>
       <input type="password" id="pw-new" placeholder="At least 8 characters" autocomplete="new-password">
     </div>
-    <div class="ff" style="margin-bottom:1.2rem;">
+    <div class="ff" style="margin-bottom:.9rem;">
       <label>Confirm New Password</label>
       <input type="password" id="pw-confirm" placeholder="Repeat new password" autocomplete="new-password">
     </div>
     <div id="pw-error" style="font-size:.82rem;color:#d46060;margin-bottom:.8rem;display:none;"></div>
-    <div style="display:flex;flex-direction:column;gap:.5rem;">
+    <div style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.5rem;">
       <button class="subbtn" id="pw-save-btn" style="width:100%;">Save Password</button>
       <button class="subbtn" onclick="hideChangePassword()" style="width:100%;font-size:.75rem;border-color:rgba(201,168,76,.2);color:var(--text-muted);">Cancel</button>
     </div>
+
+    <!-- Divider -->
+    <div style="border-top:1px solid rgba(180,60,60,.2);margin-bottom:1.2rem;"></div>
+
+    <!-- Delete Account -->
+    <div style="font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:#d46060;margin-bottom:.7rem;">⚠ Delete Account</div>
+    <p style="font-size:.82rem;color:var(--text-muted);font-style:italic;margin-bottom:.9rem;">Permanently delete your account and all your army records. This cannot be undone.</p>
+    <div class="ff" style="margin-bottom:.9rem;">
+      <label>Confirm Password</label>
+      <input type="password" id="del-password" placeholder="Enter your password to confirm" autocomplete="current-password">
+    </div>
+    <div id="del-error" style="font-size:.82rem;color:#d46060;margin-bottom:.8rem;display:none;"></div>
+    <button class="subbtn" id="del-account-btn" style="width:100%;border-color:rgba(180,60,60,.5);color:#d46060;">✕ Delete My Account</button>
   </div>
 </div>
 
@@ -4334,7 +4350,9 @@ function showChangePassword(){
   document.getElementById('pw-current').value = '';
   document.getElementById('pw-new').value     = '';
   document.getElementById('pw-confirm').value = '';
-  document.getElementById('pw-error').style.display = 'none';
+  document.getElementById('pw-error').style.display  = 'none';
+  document.getElementById('del-password').value      = '';
+  document.getElementById('del-error').style.display = 'none';
   const modal = document.getElementById('pw-modal');
   modal.style.display = 'flex';
 }
@@ -4387,6 +4405,43 @@ document.getElementById('pw-save-btn').addEventListener('click', async function(
     errEl.style.display = 'block';
   } finally {
     this.disabled = false; this.textContent = 'Save Password';
+  }
+});
+
+document.getElementById('del-account-btn').addEventListener('click', async function(){
+  const password = document.getElementById('del-password').value;
+  const errEl    = document.getElementById('del-error');
+  errEl.style.display = 'none';
+
+  if(!password){
+    errEl.textContent = 'Please enter your password to confirm.';
+    errEl.style.display = 'block'; return;
+  }
+
+  if(!confirm(`Are you sure you want to permanently delete your account "${authUser}"? All your army records will also be deleted. This cannot be undone.`)) return;
+
+  this.disabled = true; this.textContent = '⏳ Deleting…';
+
+  try {
+    const res = await fetch(`${API}/api/delete-account`, {
+      method: 'POST',
+      headers: apiHeaders(),
+      body: JSON.stringify({ password })
+    });
+    const d = await res.json();
+    if(!res.ok){
+      errEl.textContent = d.error || 'Could not delete account.';
+      errEl.style.display = 'block';
+    } else {
+      hideChangePassword();
+      showToast('Your account has been deleted.');
+      doLogout();
+    }
+  } catch(e){
+    errEl.textContent = 'Could not reach the server.';
+    errEl.style.display = 'block';
+  } finally {
+    this.disabled = false; this.textContent = '✕ Delete My Account';
   }
 });
 
