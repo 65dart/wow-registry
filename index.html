@@ -2283,8 +2283,8 @@ function updateBudget(){
 // wire up army points field to update budget display
 document.getElementById('s-pt').addEventListener('change', updateBudget);
 
-// type-section quick-add buttons
-document.querySelectorAll('.type-section-btn').forEach(btn=>{
+// type-section quick-add buttons — player army only (exclude opp-type-btn)
+document.querySelectorAll('.type-section-btn:not(.opp-type-btn)').forEach(btn=>{
   btn.addEventListener('click',()=>{
     mkUnitCard({type:btn.dataset.add});
     // open the new card's body
