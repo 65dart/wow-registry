@@ -2,7 +2,7 @@
 # Place this file in the same folder as worker.js
 # Replace <YOUR_DATABASE_ID> with the ID output from: wrangler d1 create wow-registry
 
-name             = "wow-registry-api"
+name = "wow-registry"
 main             = "worker.js"
 compatibility_date = "2024-09-23"
 
